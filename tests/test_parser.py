@@ -68,5 +68,25 @@ def test_missing_sheet_error(tmp_path):
 
 
 def test_demo_file_loads():
-    """INPT-04: demo/apple_financials.xlsx loads without ValidationError."""
-    pytest.fail("Not implemented — complete in plan 04 after demo file is created")
+    """INPT-04: demo/apple_financials.xlsx parses and computes all metrics without error."""
+    from autopitch.metrics import compute_metrics
+
+    demo_path = Path("demo/apple_financials.xlsx")
+    assert demo_path.exists(), "demo/apple_financials.xlsx not found — run create_demo.py"
+
+    data = parse_workbook(demo_path)
+    assert data.company_name == "apple_financials"
+    assert data.pl.years == ["FY2020", "FY2021", "FY2022", "FY2023", "FY2024"]
+    assert "Revenue" in data.pl.rows
+
+    metrics = compute_metrics(data)
+    # Revenue growth FY2022 ≈ 7.79%
+    assert abs(metrics.revenue_growth["FY2022"] - 7.79) < 0.5
+    # All metrics non-null for FY2022 (full data year, positive equity)
+    assert metrics.gross_margin.get("FY2022") is not None
+    assert metrics.net_margin.get("FY2022") is not None
+    assert metrics.free_cash_flow.get("FY2022") is not None
+    assert metrics.debt_to_equity.get("FY2022") is not None
+    # FY2023 and FY2024 have negative equity — D/E and ROE should be None
+    assert metrics.debt_to_equity.get("FY2023") is None
+    assert metrics.debt_to_equity.get("FY2024") is None
