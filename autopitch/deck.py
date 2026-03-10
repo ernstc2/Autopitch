@@ -140,9 +140,8 @@ def _add_exec_bullets(slide, bullets: list[str]) -> None:
     with \n line breaks.
     """
     n = len(bullets)
-    # Vertically center the block: allow ~0.75" per bullet, pad remainder
     block_h = min(n * Inches(0.75) + Inches(0.3), CONTENT_H)
-    top_offset = CONTENT_TOP + (CONTENT_H - block_h) / 2
+    top_offset = CONTENT_TOP + Inches(0.4)
 
     txBox = slide.shapes.add_textbox(
         CONTENT_LEFT + Inches(0.3),
@@ -257,14 +256,15 @@ def build_deck(
 
     wf_labels = ["Revenue", "- COGS", "Gross\nProfit", "- OpEx", "EBITDA", "- Other", "Net\nIncome"]
     wf_values = [
-        rev_lyr,
-        -cogs_lyr,
-        gross_profit_lyr,
-        -(ebitda_lyr - gross_profit_lyr),  # OpEx = Gross Profit - EBITDA (negative delta)
-        ebitda_lyr,
-        -other_lyr,
-        net_income_lyr,
+        rev_lyr,                             # total: solid bar from 0
+        -cogs_lyr,                           # delta: deduction
+        gross_profit_lyr,                    # total: solid bar from 0
+        -(gross_profit_lyr - ebitda_lyr),    # delta: OpEx deduction (negative)
+        ebitda_lyr,                          # total: solid bar from 0
+        -other_lyr,                          # delta: taxes/interest deduction
+        net_income_lyr,                      # total: solid bar from 0
     ]
+    wf_is_total = [True, False, True, False, True, False, True]
 
     # ------------------------------------------------------------------
     # Step 3: Build KPI scorecard metrics dict (most recent year)
@@ -321,7 +321,8 @@ def build_deck(
     # Slide 5: P&L Earnings Bridge (waterfall)
     charts["pl_bridge"] = waterfall_chart(
         wf_labels, wf_values,
-        title=f"P&L Bridge ({yr_last})"
+        title=f"P&L Bridge ({yr_last})",
+        is_total=wf_is_total,
     )
 
     # Slide 6: Balance Sheet Asset Composition

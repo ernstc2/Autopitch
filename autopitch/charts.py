@@ -117,40 +117,57 @@ def line_chart(years: list, series: dict, title: str, ylabel: str, percent: bool
     return _to_bytesio(fig)
 
 
-def waterfall_chart(labels: list, values: list, title: str) -> io.BytesIO:
+def waterfall_chart(labels: list, values: list, title: str, is_total: list | None = None) -> io.BytesIO:
     """CHRT-03: P&L bridge waterfall chart.
 
-    First and last bars are always NAVY_HEX.
-    Positive intermediate bars use POSITIVE_HEX (teal).
-    Negative intermediate bars use NEGATIVE_HEX (red-orange).
+    Supports two bar types:
+    - Total bars (is_total=True): solid bar from 0, NAVY_HEX.
+    - Delta bars (is_total=False): floating bar between adjacent totals;
+      positive deltas use POSITIVE_HEX, negative use NEGATIVE_HEX.
 
     Args:
-        labels: Bar labels (e.g. ["Revenue", "COGS", ..., "Net Income"]).
-        values: Numeric values for each bar. Positive = addition; negative = deduction.
+        labels: Bar labels (e.g. ["Revenue", "- COGS", ..., "Net Income"]).
+        values: Numeric values. Totals = absolute value; deltas = signed change.
         title: Chart title.
+        is_total: Boolean list same length as labels. True = total bar. Defaults
+                  to [True, False, ..., False, True] (first and last are totals).
 
     Returns:
         io.BytesIO containing a valid PNG at 150 DPI.
     """
     n = len(values)
-    # Cumulative baseline: the invisible bottom bar that makes each bar "float"
-    running = np.zeros(n)
-    for i in range(1, n):
-        running[i] = running[i - 1] + values[i - 1]
-    # Final total bar starts from zero (it is a grand total, not a delta)
-    running[-1] = 0
+    if is_total is None:
+        is_total = [i == 0 or i == n - 1 for i in range(n)]
 
-    colors = [POSITIVE_HEX if v >= 0 else NEGATIVE_HEX for v in values]
-    colors[0] = NAVY_HEX   # First bar (e.g. Revenue): always navy
-    colors[-1] = NAVY_HEX  # Last bar (e.g. Net Income): always navy
+    bottoms = np.zeros(n)
+    heights = np.zeros(n)
+    colors = []
+    current = 0.0
+
+    for i in range(n):
+        if is_total[i]:
+            bottoms[i] = 0.0
+            heights[i] = abs(values[i])
+            current = float(values[i])
+            colors.append(NAVY_HEX)
+        else:
+            delta = float(values[i])
+            if delta < 0:
+                # Deduction: bar hangs down from current level
+                bottoms[i] = current + delta
+                heights[i] = -delta
+                colors.append(NEGATIVE_HEX)
+            else:
+                # Addition: bar rises from current level
+                bottoms[i] = current
+                heights[i] = delta
+                colors.append(POSITIVE_HEX)
+            current += delta
 
     fig, ax = plt.subplots(figsize=FIGSIZE_STANDARD)
-    ax.bar(labels, values, bottom=running, color=colors, width=0.5, zorder=3)
-
+    ax.bar(labels, heights, bottom=bottoms, color=colors, width=0.5, zorder=3)
     ax.set_title(title, fontfamily=FONT_HEADING, fontsize=14, color=DARK_GRAY_HEX, pad=10)
-    ax.yaxis.set_major_formatter(
-        mticker.FuncFormatter(lambda x, _: f"${x / 1000:.0f}B")
-    )
+    ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda x, _: f"${x / 1000:.0f}B"))
     _apply_consulting_style(ax, fig)
     return _to_bytesio(fig)
 
