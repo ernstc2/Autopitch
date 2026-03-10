@@ -18,6 +18,7 @@ from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN
 
 from autopitch.models import FinancialData, MetricsOutput
+from autopitch.narrative import NarrativeOutput
 from autopitch.theme import (
     NAVY, TEAL, WHITE, DARK_GRAY, LIGHT_GRAY,
     FONT_HEADING, FONT_BODY,
@@ -130,7 +131,11 @@ def _add_text_block(
 # Public API
 # ---------------------------------------------------------------------------
 
-def build_deck(data: FinancialData, metrics: MetricsOutput) -> Presentation:
+def build_deck(
+    data: FinancialData,
+    metrics: MetricsOutput,
+    narrative: NarrativeOutput | None = None,
+) -> Presentation:
     """Assemble a complete 11-slide PPTX from FinancialData and MetricsOutput.
 
     Assembly sequence:
@@ -139,7 +144,15 @@ def build_deck(data: FinancialData, metrics: MetricsOutput) -> Presentation:
       3. Build each slide in section order
       4. Footer pass: iterate all slides with known total count
       5. Return Presentation ready for .save()
+
+    Args:
+        data: Parsed financial statements.
+        metrics: Pre-computed financial metrics.
+        narrative: Optional AI-generated titles and bullets. If None, uses
+                   NarrativeOutput() placeholder defaults (backwards-compatible).
     """
+    if narrative is None:
+        narrative = NarrativeOutput()
     prs = Presentation()
     prs.slide_width = SLIDE_W
     prs.slide_height = SLIDE_H
@@ -234,31 +247,9 @@ def build_deck(data: FinancialData, metrics: MetricsOutput) -> Presentation:
     }
 
     # ------------------------------------------------------------------
-    # Step 4: Executive summary text (pre-computed metric values)
+    # Step 4: Period string for chart titles
     # ------------------------------------------------------------------
-    most_recent = years[-1]
-    rev_mr = data.pl.rows.get("Revenue", {}).get(most_recent)
-    net_m_mr = metrics.net_margin.get(most_recent)
-    fcf_mr = metrics.free_cash_flow.get(most_recent)
-    rev_growth_mr = metrics.revenue_growth.get(most_recent)
-    gross_m_mr = metrics.gross_margin.get(most_recent)
-
-    def _fmt_val(v, fmt=".0f", unit="$", divisor=1000, suffix="B") -> str:
-        if v is None:
-            return "N/A"
-        return f"{unit}{v / divisor:{fmt}}{suffix}"
-
-    def _fmt_pct(v) -> str:
-        return "N/A" if v is None else f"{v:.1f}%"
-
     period_str = f"{years[0]} \u2013 {years[-1]}" if len(years) > 1 else years[0]
-    exec_bullets = "\n".join([
-        f"Revenue ({most_recent}): {_fmt_val(rev_mr)}",
-        f"Net Margin ({most_recent}): {_fmt_pct(net_m_mr)}",
-        f"Gross Margin ({most_recent}): {_fmt_pct(gross_m_mr)}",
-        f"Revenue Growth ({most_recent}): {_fmt_pct(rev_growth_mr)}",
-        f"Free Cash Flow ({most_recent}): {_fmt_val(fcf_mr)}",
-    ])
 
     # ------------------------------------------------------------------
     # Step 5: Generate ALL charts upfront (fail fast before PPTX mutation)
@@ -406,70 +397,92 @@ def build_deck(data: FinancialData, metrics: MetricsOutput) -> Presentation:
     # Slide 2 — Executive Summary
     # ------------------------------------------------------------------
     slide_exec = _add_slide(prs)
-    _add_header(slide_exec, "Executive Summary")
-    _add_text_block(slide_exec, exec_bullets)
+    _add_header(slide_exec, narrative.exec_summary_title)
+    _add_text_block(slide_exec, "\n".join(narrative.exec_summary_bullets))
 
     # ------------------------------------------------------------------
     # Slide 3 — P&L | Revenue Trends
     # ------------------------------------------------------------------
     slide_pl_rev = _add_slide(prs)
-    _add_header(slide_pl_rev, "P&L | Revenue Trends")
+    _add_header(slide_pl_rev, narrative.pl_revenue_title)
     _embed_chart(slide_pl_rev, charts["pl_revenue"])
 
     # ------------------------------------------------------------------
     # Slide 4 — P&L | Margin Analysis
     # ------------------------------------------------------------------
     slide_pl_margin = _add_slide(prs)
-    _add_header(slide_pl_margin, "P&L | Margin Analysis")
+    _add_header(slide_pl_margin, narrative.pl_margin_title)
     _embed_chart(slide_pl_margin, charts["pl_margins"])
+    # Commentary: chart occupies CONTENT_H; add bullets below in the footer gap
+    _add_text_block(
+        slide_pl_margin,
+        "\n".join(narrative.pl_bullets),
+        top=CONTENT_TOP + CONTENT_H - Inches(0.9),
+        height=Inches(0.85),
+        size=Pt(11),
+    )
 
     # ------------------------------------------------------------------
     # Slide 5 — P&L | Earnings Bridge
     # ------------------------------------------------------------------
     slide_pl_bridge = _add_slide(prs)
-    _add_header(slide_pl_bridge, "P&L | Earnings Bridge")
+    _add_header(slide_pl_bridge, narrative.pl_bridge_title)
     _embed_chart(slide_pl_bridge, charts["pl_bridge"])
 
     # ------------------------------------------------------------------
     # Slide 6 — Balance Sheet | Asset Composition
     # ------------------------------------------------------------------
     slide_bs_assets = _add_slide(prs)
-    _add_header(slide_bs_assets, "Balance Sheet | Asset Composition")
+    _add_header(slide_bs_assets, narrative.bs_assets_title)
     _embed_chart(slide_bs_assets, charts["bs_assets"])
 
     # ------------------------------------------------------------------
     # Slide 7 — Balance Sheet | Working Capital
     # ------------------------------------------------------------------
     slide_bs_wc = _add_slide(prs)
-    _add_header(slide_bs_wc, "Balance Sheet | Working Capital")
+    _add_header(slide_bs_wc, narrative.bs_wc_title)
     _embed_chart(slide_bs_wc, charts["bs_wc"])
+    _add_text_block(
+        slide_bs_wc,
+        "\n".join(narrative.bs_bullets),
+        top=CONTENT_TOP + CONTENT_H - Inches(0.9),
+        height=Inches(0.85),
+        size=Pt(11),
+    )
 
     # ------------------------------------------------------------------
     # Slide 8 — Balance Sheet | Leverage
     # ------------------------------------------------------------------
     slide_bs_lev = _add_slide(prs)
-    _add_header(slide_bs_lev, "Balance Sheet | Leverage")
+    _add_header(slide_bs_lev, narrative.bs_leverage_title)
     _embed_chart(slide_bs_lev, charts["bs_leverage"])
 
     # ------------------------------------------------------------------
     # Slide 9 — Cash Flow | OCF vs FCF
     # ------------------------------------------------------------------
     slide_cf_fcf = _add_slide(prs)
-    _add_header(slide_cf_fcf, "Cash Flow | OCF vs FCF")
+    _add_header(slide_cf_fcf, narrative.cf_fcf_title)
     _embed_chart(slide_cf_fcf, charts["cf_fcf"])
 
     # ------------------------------------------------------------------
     # Slide 10 — Cash Flow | Trend
     # ------------------------------------------------------------------
     slide_cf_trend = _add_slide(prs)
-    _add_header(slide_cf_trend, "Cash Flow | Trend")
+    _add_header(slide_cf_trend, narrative.cf_trend_title)
     _embed_chart(slide_cf_trend, charts["cf_trend"])
+    _add_text_block(
+        slide_cf_trend,
+        "\n".join(narrative.cf_bullets),
+        top=CONTENT_TOP + CONTENT_H - Inches(0.9),
+        height=Inches(0.85),
+        size=Pt(11),
+    )
 
     # ------------------------------------------------------------------
     # Slide 11 — KPI Scorecard
     # ------------------------------------------------------------------
     slide_kpi = _add_slide(prs)
-    _add_header(slide_kpi, "KPI Scorecard")
+    _add_header(slide_kpi, narrative.kpi_title)
     _embed_chart(slide_kpi, charts["kpi"])
 
     # ------------------------------------------------------------------
