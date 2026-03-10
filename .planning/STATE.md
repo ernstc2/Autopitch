@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 03-ai-narrative 03-01-PLAN.md
-last_updated: "2026-03-10T18:17:18.756Z"
+stopped_at: "Checkpoint: Task 2 human QA — 03-02-PLAN.md"
+last_updated: "2026-03-10T18:22:07.395Z"
 last_activity: "2026-03-10 — Plan 02-04 complete: Human visual QA approved, Phase 2 complete"
 progress:
   total_phases: 4
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 10
-  completed_plans: 9
+  completed_plans: 10
   percent: 100
 ---
 
@@ -59,6 +59,7 @@ Progress: [██████████] 100%
 | Phase 02-visual-output P03 | 12 | 1 tasks | 3 files |
 | Phase 02-visual-output P04 | 10 | 2 tasks | 2 files |
 | Phase 03-ai-narrative P01 | 7 | 2 tasks | 3 files |
+| Phase 03-ai-narrative P02 | 15 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -92,6 +93,8 @@ Recent decisions affecting current work:
 - [Phase 03-ai-narrative]: generate_narrative() pre-flight checks ANTHROPIC_API_KEY; absent returns NarrativeOutput() immediately, never instantiates SDK (NARR-05)
 - [Phase 03-ai-narrative]: Single messages.create call per invocation with all MetricsOutput serialised once; model string 'claude-sonnet-4-6' verified 2026-03-10
 - [Phase 03-ai-narrative]: NarrativeOutput frozen Pydantic model with placeholder defaults serves as both typed contract and fallback object without special-casing callers
+- [Phase 03-ai-narrative]: Commentary text blocks layered at bottom of chart area (CONTENT_TOP + CONTENT_H - Inches(0.9)) — preserves chart geometry, overlays bottom whitespace/legend area
+- [Phase 03-ai-narrative]: build_deck() narrative integration: optional NarrativeOutput | None = None param with frozen-Pydantic defaults — zero breaking changes for existing callers
 
 ### Pending Todos
 
@@ -104,6 +107,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-10T18:17:18.753Z
-Stopped at: Completed 03-ai-narrative 03-01-PLAN.md
+Last session: 2026-03-10T18:21:56.806Z
+Stopped at: Checkpoint: Task 2 human QA — 03-02-PLAN.md
 Resume file: None
