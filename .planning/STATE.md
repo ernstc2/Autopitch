@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 02-visual-output 02-04-PLAN.md
-last_updated: "2026-03-10T15:48:49.271Z"
+stopped_at: Completed 03-ai-narrative 03-01-PLAN.md
+last_updated: "2026-03-10T18:17:18.756Z"
 last_activity: "2026-03-10 — Plan 02-04 complete: Human visual QA approved, Phase 2 complete"
 progress:
   total_phases: 4
   completed_phases: 2
-  total_plans: 8
-  completed_plans: 8
+  total_plans: 10
+  completed_plans: 9
   percent: 100
 ---
 
@@ -58,6 +58,7 @@ Progress: [██████████] 100%
 | Phase 02-visual-output P02 | 2 | 1 tasks | 1 files |
 | Phase 02-visual-output P03 | 12 | 1 tasks | 3 files |
 | Phase 02-visual-output P04 | 10 | 2 tasks | 2 files |
+| Phase 03-ai-narrative P01 | 7 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -88,6 +89,9 @@ Recent decisions affecting current work:
 - [Phase 02-visual-output]: build_deck() generates all charts upfront before PPTX mutation (fail-fast pattern) then applies footers in a second pass
 - [Phase 02-visual-output]: N/M (not meaningful) used for D/E ratio and ROE when equity is negative — N/A implies missing data, N/M signals ratio is defined but undefined in this context
 - [Phase 02-visual-output]: FOOTER_TOP derived from SLIDE_H constant — ensures footer flushes to physical bottom edge regardless of slide dimensions
+- [Phase 03-ai-narrative]: generate_narrative() pre-flight checks ANTHROPIC_API_KEY; absent returns NarrativeOutput() immediately, never instantiates SDK (NARR-05)
+- [Phase 03-ai-narrative]: Single messages.create call per invocation with all MetricsOutput serialised once; model string 'claude-sonnet-4-6' verified 2026-03-10
+- [Phase 03-ai-narrative]: NarrativeOutput frozen Pydantic model with placeholder defaults serves as both typed contract and fallback object without special-casing callers
 
 ### Pending Todos
 
@@ -100,6 +104,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-10T15:37:09.000Z
-Stopped at: Completed 02-visual-output 02-04-PLAN.md
+Last session: 2026-03-10T18:17:18.753Z
+Stopped at: Completed 03-ai-narrative 03-01-PLAN.md
 Resume file: None

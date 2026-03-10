@@ -66,8 +66,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 03-01-PLAN.md — narrative.py module: NarrativeOutput model, generate_narrative(), fallback guard, SDK install
-- [ ] 03-02-PLAN.md — deck.py integration: wire NarrativeOutput into build_deck(), human QA of consulting-voice output
+- [ ] 03-01-PLAN.md ï¿½ narrative.py module: NarrativeOutput model, generate_narrative(), fallback guard, SDK install
+- [ ] 03-02-PLAN.md ï¿½ deck.py integration: wire NarrativeOutput into build_deck(), human QA of consulting-voice output
 
 ### Phase 4: Interfaces and Polish
 **Goal**: Users can generate the deck via both CLI and Streamlit web UI from a single shared pipeline; the project is fully documented and demo-ready for portfolio reviewers
