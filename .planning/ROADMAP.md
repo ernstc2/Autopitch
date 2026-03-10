@@ -13,7 +13,7 @@ Autopitch transforms a single Excel workbook into a boardroom-ready consulting d
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Data Foundation** - Parse and validate a 3-sheet Excel workbook; compute all financial metrics from the validated data (completed 2026-03-10)
-- [ ] **Phase 2: Visual Output** - Generate all Big 4-styled charts and assemble the complete 12-15 slide PowerPoint deck
+- [x] **Phase 2: Visual Output** - Generate all Big 4-styled charts and assemble the complete 12-15 slide PowerPoint deck (completed 2026-03-10)
 - [ ] **Phase 3: AI Narrative** - Integrate Claude API to generate insight-first titles and consulting-voice commentary for every deck section
 - [ ] **Phase 4: Interfaces and Polish** - Wire the pipeline to CLI and Streamlit entry points; complete README and demo data
 
@@ -49,10 +49,10 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Scaffold: install python-pptx + matplotlib, create theme.py constants, write failing test stubs for all 13 requirements
-- [ ] 02-02-PLAN.md — Charts module: implement charts.py (bar, line, waterfall, KPI scorecard) — CHRT-01..05 GREEN
-- [ ] 02-03-PLAN.md — Deck assembly: implement deck.py with build_deck() — DECK-01..08 GREEN, smoke test generates apple_demo.pptx
-- [ ] 02-04-PLAN.md — Human visual verification: open apple_demo.pptx, confirm Big 4 aesthetic and chart rendering
+- [x] 02-01-PLAN.md — Scaffold: install python-pptx + matplotlib, create theme.py constants, write failing test stubs for all 13 requirements
+- [x] 02-02-PLAN.md — Charts module: implement charts.py (bar, line, waterfall, KPI scorecard) — CHRT-01..05 GREEN
+- [x] 02-03-PLAN.md — Deck assembly: implement deck.py with build_deck() — DECK-01..08 GREEN, smoke test generates apple_demo.pptx
+- [x] 02-04-PLAN.md — Human visual verification: open apple_demo.pptx, confirm Big 4 aesthetic and chart rendering
 
 ### Phase 3: AI Narrative
 **Goal**: Every deck section carries Claude-generated insight-first titles and consulting-voice bullet commentary — with graceful fallback when no API key is present
@@ -84,6 +84,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Data Foundation | 4/4 | Complete   | 2026-03-10 |
-| 2. Visual Output | 2/4 | In Progress|  |
+| 2. Visual Output | 4/4 | Complete   | 2026-03-10 |
 | 3. AI Narrative | 0/TBD | Not started | - |
 | 4. Interfaces and Polish | 0/TBD | Not started | - |
