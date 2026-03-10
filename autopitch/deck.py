@@ -338,7 +338,8 @@ def build_deck(
             "Working Capital": wc_vals,
         },
         title="Working Capital Trend",
-        ylabel="Working Capital (USD)"
+        ylabel="Working Capital (USD)",
+        percent=False,
     )
 
     # Slide 8: Balance Sheet Leverage
@@ -362,7 +363,8 @@ def build_deck(
             "Free Cash Flow": fcf_vals,
         },
         title="Cash Flow Trend",
-        ylabel="USD"
+        ylabel="USD",
+        percent=False,
     )
 
     # Slide 11: KPI Scorecard

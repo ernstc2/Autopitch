@@ -89,14 +89,15 @@ def bar_chart(years: list, values: list, title: str, ylabel: str) -> io.BytesIO:
     return _to_bytesio(fig)
 
 
-def line_chart(years: list, series: dict, title: str, ylabel: str) -> io.BytesIO:
-    """CHRT-02: Line chart for margin trends (up to 3 series).
+def line_chart(years: list, series: dict, title: str, ylabel: str, percent: bool = True) -> io.BytesIO:
+    """CHRT-02: Line chart for margin trends or USD time-series (up to 3 series).
 
     Args:
         years: List of period labels.
         series: Dict mapping series name to list of values (up to 3 entries).
         title: Chart title.
         ylabel: Y-axis label.
+        percent: If True (default), format Y-axis as percentage. If False, format as $B.
 
     Returns:
         io.BytesIO containing a valid PNG at 150 DPI.
@@ -107,9 +108,10 @@ def line_chart(years: list, series: dict, title: str, ylabel: str) -> io.BytesIO
         ax.plot(years, vals, marker='o', label=name, color=color, linewidth=2)
     ax.set_title(title, fontfamily=FONT_HEADING, fontsize=14, color=DARK_GRAY_HEX, pad=10)
     ax.set_ylabel(ylabel, fontfamily=FONT_BODY, fontsize=10, color=DARK_GRAY_HEX)
-    ax.yaxis.set_major_formatter(
-        mticker.FuncFormatter(lambda x, _: f"{x:.1f}%")
-    )
+    if percent:
+        ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda x, _: f"{x:.1f}%"))
+    else:
+        ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda x, _: f"${x / 1000:.0f}B"))
     ax.legend(frameon=False, fontsize=9)
     _apply_consulting_style(ax, fig)
     return _to_bytesio(fig)

@@ -116,6 +116,8 @@ def _build_prompt(data: FinancialData, metrics: MetricsOutput) -> str:
 
     return (
         f"<financial_metrics>\n{metrics_json}\n</financial_metrics>\n\n"
+        "Note: All dollar values in the metrics above are in USD millions (e.g. 99360 = $99.4B).\n"
+        "When citing specific values in titles or bullets, convert to billions (e.g. '$99B FCF').\n\n"
         "Generate insight-first titles and consulting-voice commentary for a financial deck.\n"
         f"Return ONLY a JSON object matching this schema:\n{schema_str}\n"
         "No markdown. No explanation. JSON only."
