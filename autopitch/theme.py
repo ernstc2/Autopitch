@@ -32,8 +32,8 @@ CONTENT_TOP   = Inches(1.25)
 CONTENT_LEFT  = Inches(0.5)
 CONTENT_W     = Inches(12.33)
 CONTENT_H     = Inches(5.75)
-FOOTER_TOP    = Inches(7.0)
 FOOTER_HEIGHT = Inches(0.4)
+FOOTER_TOP    = SLIDE_H - FOOTER_HEIGHT  # flush with bottom edge
 
 # --- Font sizes ---
 SZ_SLIDE_TITLE   = Pt(24)
