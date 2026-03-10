@@ -51,15 +51,20 @@ def _add_header(slide, title: str) -> None:
     bar.fill.fore_color.rgb = NAVY
     bar.line.fill.background()  # Remove default border
 
-    # Title text over the bar
-    txBox = shapes.add_textbox(Inches(0.4), Inches(0.18), Inches(12.0), Inches(0.75))
+    # Title text over the bar — vertically centered, auto-scaled for long titles
+    from pptx.enum.text import PP_ALIGN
+    from pptx.util import Emu
+    txBox = shapes.add_textbox(Inches(0.4), Inches(0.05), Inches(12.0), HEADER_HEIGHT - Inches(0.1))
     tf = txBox.text_frame
-    tf.word_wrap = False
+    tf.word_wrap = True
+    tf.auto_size = None
+    from pptx.enum.text import MSO_ANCHOR
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
     p = tf.paragraphs[0]
     run = p.add_run()
     run.text = title
     run.font.name = FONT_HEADING
-    run.font.size = SZ_SLIDE_TITLE
+    run.font.size = Pt(18) if len(title) > 60 else SZ_SLIDE_TITLE
     run.font.bold = True
     run.font.color.rgb = WHITE
 
@@ -100,10 +105,10 @@ def _add_footer(slide, company: str, slide_num: int, total: int) -> None:
     runR.font.color.rgb = WHITE
 
 
-def _embed_chart(slide, buf: io.BytesIO) -> None:
+def _embed_chart(slide, buf: io.BytesIO, height=None) -> None:
     """Embed a matplotlib PNG BytesIO into the slide content area."""
     buf.seek(0)  # Guard: rewind in case cursor moved
-    slide.shapes.add_picture(buf, CONTENT_LEFT, CONTENT_TOP, CONTENT_W, CONTENT_H)
+    slide.shapes.add_picture(buf, CONTENT_LEFT, CONTENT_TOP, CONTENT_W, height or CONTENT_H)
 
 
 def _add_text_block(
@@ -125,6 +130,44 @@ def _add_text_block(
     run.font.name = FONT_BODY
     run.font.size = size
     run.font.color.rgb = DARK_GRAY
+
+
+def _add_exec_bullets(slide, bullets: list[str]) -> None:
+    """Render executive summary bullets, vertically centered in the content area.
+
+    Each bullet gets its own paragraph so spacing, markers, and color can be
+    controlled independently — unlike _add_text_block which uses a single run
+    with \n line breaks.
+    """
+    n = len(bullets)
+    # Vertically center the block: allow ~0.75" per bullet, pad remainder
+    block_h = min(n * Inches(0.75) + Inches(0.3), CONTENT_H)
+    top_offset = CONTENT_TOP + (CONTENT_H - block_h) / 2
+
+    txBox = slide.shapes.add_textbox(
+        CONTENT_LEFT + Inches(0.3),
+        top_offset,
+        CONTENT_W - Inches(0.6),
+        block_h,
+    )
+    tf = txBox.text_frame
+    tf.word_wrap = True
+
+    for i, bullet in enumerate(bullets):
+        p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+        if i > 0:
+            p.space_before = Pt(22)
+        marker = p.add_run()
+        marker.text = "—  "
+        marker.font.name = FONT_HEADING
+        marker.font.size = Pt(13)
+        marker.font.bold = True
+        marker.font.color.rgb = TEAL
+        body = p.add_run()
+        body.text = bullet
+        body.font.name = FONT_BODY
+        body.font.size = Pt(13)
+        body.font.color.rgb = NAVY
 
 
 # ---------------------------------------------------------------------------
@@ -398,7 +441,7 @@ def build_deck(
     # ------------------------------------------------------------------
     slide_exec = _add_slide(prs)
     _add_header(slide_exec, narrative.exec_summary_title)
-    _add_text_block(slide_exec, "\n".join(narrative.exec_summary_bullets))
+    _add_exec_bullets(slide_exec, narrative.exec_summary_bullets)
 
     # ------------------------------------------------------------------
     # Slide 3 — P&L | Revenue Trends
@@ -412,14 +455,14 @@ def build_deck(
     # ------------------------------------------------------------------
     slide_pl_margin = _add_slide(prs)
     _add_header(slide_pl_margin, narrative.pl_margin_title)
-    _embed_chart(slide_pl_margin, charts["pl_margins"])
-    # Commentary: chart occupies CONTENT_H; add bullets below in the footer gap
+    _CHART_H = CONTENT_H - Inches(1.1)
+    _embed_chart(slide_pl_margin, charts["pl_margins"], height=_CHART_H)
     _add_text_block(
         slide_pl_margin,
         "\n".join(narrative.pl_bullets),
-        top=CONTENT_TOP + CONTENT_H - Inches(0.9),
-        height=Inches(0.85),
-        size=Pt(11),
+        top=CONTENT_TOP + _CHART_H + Inches(0.05),
+        height=Inches(1.0),
+        size=Pt(9),
     )
 
     # ------------------------------------------------------------------
@@ -441,13 +484,14 @@ def build_deck(
     # ------------------------------------------------------------------
     slide_bs_wc = _add_slide(prs)
     _add_header(slide_bs_wc, narrative.bs_wc_title)
-    _embed_chart(slide_bs_wc, charts["bs_wc"])
+    _CHART_H = CONTENT_H - Inches(1.1)
+    _embed_chart(slide_bs_wc, charts["bs_wc"], height=_CHART_H)
     _add_text_block(
         slide_bs_wc,
         "\n".join(narrative.bs_bullets),
-        top=CONTENT_TOP + CONTENT_H - Inches(0.9),
-        height=Inches(0.85),
-        size=Pt(11),
+        top=CONTENT_TOP + _CHART_H + Inches(0.05),
+        height=Inches(1.0),
+        size=Pt(9),
     )
 
     # ------------------------------------------------------------------
@@ -469,13 +513,14 @@ def build_deck(
     # ------------------------------------------------------------------
     slide_cf_trend = _add_slide(prs)
     _add_header(slide_cf_trend, narrative.cf_trend_title)
-    _embed_chart(slide_cf_trend, charts["cf_trend"])
+    _CHART_H = CONTENT_H - Inches(1.1)
+    _embed_chart(slide_cf_trend, charts["cf_trend"], height=_CHART_H)
     _add_text_block(
         slide_cf_trend,
         "\n".join(narrative.cf_bullets),
-        top=CONTENT_TOP + CONTENT_H - Inches(0.9),
-        height=Inches(0.85),
-        size=Pt(11),
+        top=CONTENT_TOP + _CHART_H + Inches(0.05),
+        height=Inches(1.0),
+        size=Pt(9),
     )
 
     # ------------------------------------------------------------------
