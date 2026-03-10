@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 02-visual-output 02-02-PLAN.md
-last_updated: "2026-03-10T15:17:23.673Z"
+stopped_at: Completed 02-visual-output 02-03-PLAN.md
+last_updated: "2026-03-10T15:24:07.545Z"
 last_activity: "2026-03-09 — Plan 01-04 complete: Apple demo file, integration test, 22 tests passing"
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 8
-  completed_plans: 6
+  completed_plans: 7
   percent: 100
 ---
 
@@ -56,6 +56,7 @@ Progress: [██████████] 100%
 | Phase 01-data-foundation P04 | 20 | 1 tasks | 2 files |
 | Phase 02-visual-output P01 | 2 | 2 tasks | 4 files |
 | Phase 02-visual-output P02 | 2 | 1 tasks | 1 files |
+| Phase 02-visual-output P03 | 12 | 1 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -81,6 +82,9 @@ Recent decisions affecting current work:
 - [Phase 02-visual-output]: Test stubs use try/except ImportError + pytestmark skipif so 13 tests collect cleanly before charts.py/deck.py exist
 - [Phase 02-visual-output]: matplotlib 3.10 axhline() incompatible with transform kwarg — replaced with ax.plot() using transAxes for KPI separator lines
 - [Phase 02-visual-output]: _to_bytesio() shared helper enforces DPI=150, buf.seek(0), plt.close(fig) across all 4 chart functions
+- [Phase 02-visual-output]: Title slide uses full-navy background (no header bar) — different from content slides that use standard header + footer
+- [Phase 02-visual-output]: Executive summary uses pre-computed metric values as placeholder narrative; Phase 3 replaces with AI-generated text
+- [Phase 02-visual-output]: build_deck() generates all charts upfront before PPTX mutation (fail-fast pattern) then applies footers in a second pass
 
 ### Pending Todos
 
@@ -93,6 +97,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-10T15:17:23.670Z
-Stopped at: Completed 02-visual-output 02-02-PLAN.md
+Last session: 2026-03-10T15:24:07.543Z
+Stopped at: Completed 02-visual-output 02-03-PLAN.md
 Resume file: None

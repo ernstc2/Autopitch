@@ -223,12 +223,12 @@ def build_deck(data: FinancialData, metrics: MetricsOutput) -> Presentation:
         "D/E Ratio":       (
             f"{metrics.debt_to_equity.get(yr, 0) or 0:.2f}x"
             if metrics.debt_to_equity.get(yr) is not None
-            else "N/A"
+            else "N/M"
         ),
         "ROE":             (
             f"{metrics.roe.get(yr, 0) or 0:.1f}%"
             if metrics.roe.get(yr) is not None
-            else "N/A"
+            else "N/M"
         ),
         "Free Cash Flow":  f"${(metrics.free_cash_flow.get(yr, 0) or 0) / 1000:.0f}B",
     }
