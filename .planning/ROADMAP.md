@@ -63,7 +63,11 @@ Plans:
   2. Each financial section (P&L, Balance Sheet, Cash Flow) contains 2-3 bullet points in consulting voice â€” forward-looking and analytical, not descriptive
   3. The entire deck is generated with a single Claude API call per run; no per-slide API calls occur
   4. Running the tool without ANTHROPIC_API_KEY set produces a complete deck with placeholder commentary instead of an error or crash
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — narrative.py module: NarrativeOutput model, generate_narrative(), fallback guard, SDK install
+- [ ] 03-02-PLAN.md — deck.py integration: wire NarrativeOutput into build_deck(), human QA of consulting-voice output
 
 ### Phase 4: Interfaces and Polish
 **Goal**: Users can generate the deck via both CLI and Streamlit web UI from a single shared pipeline; the project is fully documented and demo-ready for portfolio reviewers
