@@ -53,9 +53,11 @@ def parse_workbook(source: Union[str, Path, BinaryIO]) -> FinancialData:
     Raises:
         ValidationError: If required sheets are missing or validation fails.
     """
-    # Determine company name before opening (path gives stem; stream gives "Unknown")
+    # Determine company name before opening (path gives stem; stream with .name gives stem; fallback "Unknown")
     if isinstance(source, (str, Path)):
         company_name = Path(source).stem
+    elif hasattr(source, "name") and source.name:
+        company_name = Path(source.name).stem
     else:
         company_name = "Unknown"
 
