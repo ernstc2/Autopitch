@@ -45,7 +45,7 @@
 - [x] **NARR-01**: Tool generates insight-first slide titles via Claude API (e.g. "Revenue grew 18% — services mix the primary driver" not "Revenue Trends")
 - [x] **NARR-02**: Tool generates 2-3 bullet narrative commentary per deck section using Claude API
 - [x] **NARR-03**: Narrative generation uses a single Claude API call per deck run, passing all computed metrics as structured JSON
-- [ ] **NARR-04**: System prompt and one-shot example enforce consulting-voice output (analytical, forward-looking, not descriptive)
+- [x] **NARR-04**: System prompt and one-shot example enforce consulting-voice output (analytical, forward-looking, not descriptive)
 - [x] **NARR-05**: Tool falls back gracefully to placeholder commentary when ANTHROPIC_API_KEY is not set
 
 ### Interfaces
@@ -116,7 +116,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | NARR-01 | Phase 3 | Complete |
 | NARR-02 | Phase 3 | Complete |
 | NARR-03 | Phase 3 | Complete |
-| NARR-04 | Phase 3 | Pending |
+| NARR-04 | Phase 3 | Complete |
 | NARR-05 | Phase 3 | Complete |
 | INTF-01 | Phase 4 | Pending |
 | INTF-02 | Phase 4 | Pending |
