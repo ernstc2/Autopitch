@@ -66,19 +66,24 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 03-01-PLAN.md � narrative.py module: NarrativeOutput model, generate_narrative(), fallback guard, SDK install
-- [ ] 03-02-PLAN.md � deck.py integration: wire NarrativeOutput into build_deck(), human QA of consulting-voice output
+- [ ] 03-01-PLAN.md — narrative.py module: NarrativeOutput model, generate_narrative(), fallback guard, SDK install
+- [ ] 03-02-PLAN.md — deck.py integration: wire NarrativeOutput into build_deck(), human QA of consulting-voice output
 
 ### Phase 4: Interfaces and Polish
 **Goal**: Users can generate the deck via both CLI and Streamlit web UI from a single shared pipeline; the project is fully documented and demo-ready for portfolio reviewers
 **Depends on**: Phase 3
 **Requirements**: INTF-01, INTF-02, INTF-03, INTF-04
 **Success Criteria** (what must be TRUE):
-  1. Running `python generate.py demo.xlsx` in a terminal produces a `.pptx` file in the current directory with no errors
+  1. Running `python generate.py demo/apple_financials.xlsx` in a terminal produces a `.pptx` file in the current directory with no errors
   2. Opening the Streamlit app, uploading the demo Excel file, and clicking Generate produces a downloadable `.pptx` — without duplicating any pipeline logic in the UI layer
-  3. CLI output and Streamlit output produce byte-for-byte identical PPTX files (same content, same structure) from the same input
+  3. CLI output and Streamlit output produce structurally equivalent PPTX files (same pipeline logic, same slide structure) from the same input
   4. A portfolio reviewer can follow README instructions to install dependencies, configure the API key, run the demo, and understand the architecture decisions — without asking for clarification
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — Shared pipeline + CLI: autopitch/pipeline.py run_pipeline(), generate.py CLI, TDD test stubs
+- [ ] 04-02-PLAN.md — Streamlit UI: app.py thin wrapper, human QA of upload-generate-download flow
+- [ ] 04-03-PLAN.md — README and docs: README.md (9 sections), .env.example, README section tests
 
 ## Progress
 
@@ -90,4 +95,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. Data Foundation | 4/4 | Complete   | 2026-03-10 |
 | 2. Visual Output | 4/4 | Complete   | 2026-03-10 |
 | 3. AI Narrative | 2/2 | Complete   | 2026-03-10 |
-| 4. Interfaces and Polish | 0/TBD | Not started | - |
+| 4. Interfaces and Polish | 0/3 | Not started | - |
