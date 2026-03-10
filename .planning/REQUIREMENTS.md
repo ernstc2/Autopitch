@@ -53,7 +53,7 @@
 - [ ] **INTF-01**: User can run the tool via CLI: `python generate.py financials.xlsx` outputting a `.pptx` file
 - [ ] **INTF-02**: User can run the tool via Streamlit web UI: upload Excel, click generate, download PPTX
 - [ ] **INTF-03**: CLI and Streamlit UI both call an identical shared `run_pipeline()` function — no logic duplication
-- [ ] **INTF-04**: README documents installation, usage (CLI + UI), Excel format requirements, and API key setup
+- [x] **INTF-04**: README documents installation, usage (CLI + UI), Excel format requirements, and API key setup
 
 ## v2 Requirements
 
@@ -121,7 +121,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INTF-01 | Phase 4 | Pending |
 | INTF-02 | Phase 4 | Pending |
 | INTF-03 | Phase 4 | Pending |
-| INTF-04 | Phase 4 | Pending |
+| INTF-04 | Phase 4 | Complete |
 
 **Coverage:**
 - v1 requirements: 32 total
