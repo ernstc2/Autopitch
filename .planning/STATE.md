@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 04-01-PLAN.md
-last_updated: "2026-03-10T20:38:20.752Z"
+stopped_at: Completed 04-02-PLAN.md
+last_updated: "2026-03-10T21:06:33.301Z"
 last_activity: "2026-03-10 — Plan 02-04 complete: Human visual QA approved, Phase 2 complete"
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 13
-  completed_plans: 12
+  completed_plans: 13
   percent: 100
 ---
 
@@ -62,6 +62,7 @@ Progress: [██████████] 100%
 | Phase 03-ai-narrative P02 | 15 | 1 tasks | 1 files |
 | Phase 04-interfaces-and-polish P03 | 2 | 2 tasks | 3 files |
 | Phase 04-interfaces-and-polish P01 | 3 | 3 tasks | 4 files |
+| Phase 04-interfaces-and-polish P02 | 20 | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -101,6 +102,8 @@ Recent decisions affecting current work:
 - [Phase 04-interfaces-and-polish]: README uses real demo path demo/apple_financials.xlsx everywhere — pitfall 5 from research avoided
 - [Phase 04-interfaces-and-polish]: run_pipeline() is the single integration layer — both CLI and Streamlit call this function exclusively, no pipeline logic in entry point files (INTF-03)
 - [Phase 04-interfaces-and-polish]: load_dotenv() called before autopitch imports in generate.py to ensure ANTHROPIC_API_KEY is set before narrative module reads os.environ at call time
+- [Phase 04-interfaces-and-polish]: load_dotenv() precedes autopitch imports in app.py so ANTHROPIC_API_KEY available at import time
+- [Phase 04-interfaces-and-polish]: app.py calls only run_pipeline() — no direct pipeline logic per INTF-03, enforced by automated test
 
 ### Pending Todos
 
@@ -113,6 +116,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-10T20:38:20.749Z
-Stopped at: Completed 04-01-PLAN.md
+Last session: 2026-03-10T21:06:33.299Z
+Stopped at: Completed 04-02-PLAN.md
 Resume file: None
