@@ -1,5 +1,6 @@
 import pytest
 from autopitch.models import FinancialData, StatementData
+from autopitch.metrics import compute_metrics
 
 
 @pytest.fixture
@@ -73,3 +74,8 @@ def minimal_valid_data():
             }
         ),
     )
+
+
+@pytest.fixture
+def metrics_from_minimal(minimal_valid_data):
+    return compute_metrics(minimal_valid_data)
