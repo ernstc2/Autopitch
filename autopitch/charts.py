@@ -179,8 +179,9 @@ def waterfall_chart(labels: list, values: list, title: str, is_total: list | Non
             ax.plot(
                 [x_positions[i] + 0.25, x_positions[i + 1] - 0.25],
                 [running, running],
-                color=LIGHT_GRAY_HEX,
-                linewidth=1.0,
+                color=DARK_GRAY_HEX,
+                linewidth=0.8,
+                linestyle='--',
                 zorder=4,
             )
 
