@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Portfolio Demo Polish
 status: planning
-stopped_at: Completed 05-01-PLAN.md
-last_updated: "2026-03-11T00:45:31.842Z"
-last_activity: 2026-03-10 — Roadmap created; 14/14 v1.1 requirements mapped across 3 phases
+stopped_at: Completed 05-02-PLAN.md
+last_updated: "2026-03-11T01:00:00.000Z"
+last_activity: 2026-03-11 — Deployed to Streamlit Cloud; end-to-end generation verified at public URL
 progress:
   total_phases: 3
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 1
-  percent: 0
+  completed_plans: 2
+  percent: 100
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-03-10)
 ## Current Position
 
 Phase: 5 of 7 (Deployment Foundation)
-Plan: —
-Status: Ready to plan
-Last activity: 2026-03-10 — Roadmap created; 14/14 v1.1 requirements mapped across 3 phases
+Plan: 2 of 2 — COMPLETE
+Status: Phase complete; ready for Phase 6
+Last activity: 2026-03-11 — Deployed to Streamlit Cloud; end-to-end generation verified at public URL
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██████████] 100% (Phase 05 complete)
 
 ## Performance Metrics
 
@@ -59,8 +59,9 @@ Recent v1.1 decisions:
 - Secrets via .streamlit/secrets.toml (not .env) — load_dotenv() is no-op on Cloud; root-level TOML secrets auto-promoted to os.environ, so narrative.py needs no changes
 - @st.cache_data on demo pipeline call — prevents duplicate Claude API calls on repeated button clicks
 - st.session_state for PPTX bytes — download button rerun gotcha requires bytes stored in state, not local variable
-- [Phase 05-deployment-foundation]: Split runtime and dev deps: requirements.txt runtime-only (7 deps); requirements-dev.txt adds pytest/pytest-cov via -r include
-- [Phase 05-deployment-foundation]: Root-level TOML key ANTHROPIC_API_KEY auto-promoted to os.environ on Streamlit Cloud — no code changes needed in narrative.py
+- [Phase 05-deployment-foundation P01]: Split runtime and dev deps: requirements.txt runtime-only (7 deps); requirements-dev.txt adds pytest/pytest-cov via -r include
+- [Phase 05-deployment-foundation P01]: Root-level TOML key ANTHROPIC_API_KEY auto-promoted to os.environ on Streamlit Cloud — no code changes needed in narrative.py
+- [Phase 05-deployment-foundation P02]: Canonical public URL: https://autopitch-54x3pzywhwscvrs9jw6yx7.streamlit.app/ — Python 3.11, ANTHROPIC_API_KEY secret configured, end-to-end verified
 
 ### Pending Todos
 
@@ -68,12 +69,10 @@ None.
 
 ### Blockers/Concerns
 
-- GitHub push auth (403 on tag push) must be resolved before Cloud deployment — re-auth via `gh auth login` or new PAT
-- Select Python 3.11 explicitly in Streamlit Cloud Advanced Settings on first deploy — cannot change after deployment without redeploying
-- Audit charts.py for plt.close('all') after BytesIO saves to prevent memory growth on Cloud
+- Audit charts.py for plt.close('all') after BytesIO saves to prevent memory growth on Cloud (deferred to Phase 7)
 
 ## Session Continuity
 
-Last session: 2026-03-11T00:45:31.840Z
-Stopped at: Completed 05-01-PLAN.md
+Last session: 2026-03-11T01:00:00.000Z
+Stopped at: Completed 05-02-PLAN.md
 Resume file: None
