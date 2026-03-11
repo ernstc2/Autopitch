@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: MVP
-status: completed
-stopped_at: Milestone v1.0 archived
-last_updated: "2026-03-10T21:38:01.588Z"
-last_activity: "2026-03-10 — v1.0 MVP milestone completed and archived"
+milestone: v1.1
+milestone_name: Portfolio Demo Polish
+status: planning
+stopped_at: Completed 05-01-PLAN.md
+last_updated: "2026-03-11T00:45:31.842Z"
+last_activity: 2026-03-10 — Roadmap created; 14/14 v1.1 requirements mapped across 3 phases
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 13
-  completed_plans: 13
-  percent: 100
+  total_phases: 3
+  completed_phases: 0
+  total_plans: 2
+  completed_plans: 1
+  percent: 0
 ---
 
 # Project State
@@ -21,46 +21,46 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-10)
 
 **Core value:** User uploads one Excel file and gets back a boardroom-ready consulting deck in seconds — the kind that would take an analyst 2+ hours to build manually.
-**Current focus:** v1.0 shipped — planning next milestone
+**Current focus:** v1.1 Portfolio Demo Polish — Phase 5: Deployment Foundation
 
 ## Current Position
 
-Milestone: v1.0 MVP — SHIPPED 2026-03-10
-Status: All 4 phases (13 plans) complete, milestone archived
-Next: `/gsd:new-milestone` to define v1.1 or v2.0
+Phase: 5 of 7 (Deployment Foundation)
+Plan: —
+Status: Ready to plan
+Last activity: 2026-03-10 — Roadmap created; 14/14 v1.1 requirements mapped across 3 phases
 
-Progress: [██████████] 100%
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 13
-- Total execution time: ~2 hours
-- Average duration: ~9 min/plan
+- Total plans completed: 0 (v1.1)
+- Average duration: —
+- Total execution time: —
 
 **By Phase:**
 
-| Phase | Plans | Duration | Files |
-|-------|-------|----------|-------|
-| 01-data-foundation P01 | 4min | 3 tasks | 11 files |
-| 01-data-foundation P02 | 12min | 2 tasks | 4 files |
-| 01-data-foundation P03 | 6min | 1 task | 2 files |
-| 01-data-foundation P04 | 20min | 1 task | 2 files |
-| 02-visual-output P01 | 2min | 2 tasks | 4 files |
-| 02-visual-output P02 | 2min | 1 task | 1 files |
-| 02-visual-output P03 | 12min | 1 task | 3 files |
-| 02-visual-output P04 | 10min | 2 tasks | 2 files |
-| 03-ai-narrative P01 | 7min | 2 tasks | 3 files |
-| 03-ai-narrative P02 | 15min | 1 task | 1 files |
-| 04-interfaces-and-polish P01 | 3min | 3 tasks | 4 files |
-| 04-interfaces-and-polish P02 | 20min | 2 tasks | 1 files |
-| 04-interfaces-and-polish P03 | 10min | 2 tasks | 3 files |
+| Phase | Plans | Total | Avg/Plan |
+|-------|-------|-------|----------|
+| - | - | - | - |
+
+*Updated after each plan completion*
+| Phase 05-deployment-foundation P01 | 4min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
 ### Decisions
 
-All decisions logged in PROJECT.md Key Decisions table (updated for v1.0 milestone).
+All v1.0 decisions logged in PROJECT.md Key Decisions table.
+
+Recent v1.1 decisions:
+- Phase 5 must precede all UI work — python-pptx and matplotlib confirmed absent from requirements.txt; Cloud build fails without them
+- Secrets via .streamlit/secrets.toml (not .env) — load_dotenv() is no-op on Cloud; root-level TOML secrets auto-promoted to os.environ, so narrative.py needs no changes
+- @st.cache_data on demo pipeline call — prevents duplicate Claude API calls on repeated button clicks
+- st.session_state for PPTX bytes — download button rerun gotcha requires bytes stored in state, not local variable
+- [Phase 05-deployment-foundation]: Split runtime and dev deps: requirements.txt runtime-only (7 deps); requirements-dev.txt adds pytest/pytest-cov via -r include
+- [Phase 05-deployment-foundation]: Root-level TOML key ANTHROPIC_API_KEY auto-promoted to os.environ on Streamlit Cloud — no code changes needed in narrative.py
 
 ### Pending Todos
 
@@ -68,10 +68,12 @@ None.
 
 ### Blockers/Concerns
 
-None — v1.0 shipped cleanly.
+- GitHub push auth (403 on tag push) must be resolved before Cloud deployment — re-auth via `gh auth login` or new PAT
+- Select Python 3.11 explicitly in Streamlit Cloud Advanced Settings on first deploy — cannot change after deployment without redeploying
+- Audit charts.py for plt.close('all') after BytesIO saves to prevent memory growth on Cloud
 
 ## Session Continuity
 
-Last session: 2026-03-10
-Stopped at: Milestone v1.0 archived
+Last session: 2026-03-11T00:45:31.840Z
+Stopped at: Completed 05-01-PLAN.md
 Resume file: None
