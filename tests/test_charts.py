@@ -3,6 +3,7 @@ Failing test stubs for CHRT-01..05.
 All tests are skipped until autopitch.charts is implemented.
 """
 import io
+from unittest.mock import patch
 import pytest
 from PIL import Image
 
@@ -79,6 +80,31 @@ def test_chart_dpi():
         # with 150 DPI (e.g., a 10-inch-wide figure → ~1500px wide)
         width_px, _ = img.size
         assert width_px >= 900, f"Expected width >= 900px for 150 DPI, got {width_px}"
+
+
+def test_waterfall_chart_connector_lines():
+    """Waterfall chart should have thin horizontal connector lines between adjacent bars."""
+    import matplotlib.pyplot as plt
+
+    labels = ["Revenue", "COGS", "Gross Profit", "OpEx", "EBIT"]
+    values = [1000, -600, 400, -150, 250]
+
+    # Patch plt.close so the figure stays open for inspection
+    with patch("autopitch.charts.plt.close"):
+        waterfall_chart(labels, values, title="Test Connectors")
+
+    ax = plt.gca()
+    lines = ax.get_lines()
+
+    # Expect at least 4 connector lines (one between each adjacent pair of 5 bars)
+    assert len(lines) >= 4, f"Expected >= 4 connector lines, got {len(lines)}"
+
+    # Each connector must be horizontal (constant y)
+    for line in lines:
+        ydata = line.get_ydata()
+        assert ydata[0] == ydata[1], f"Connector not horizontal: y={ydata}"
+
+    plt.close("all")
 
 
 def test_kpi_scorecard():
