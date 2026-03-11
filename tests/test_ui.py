@@ -50,19 +50,20 @@ def _first_line_containing(text: str, lines: list[str]) -> int:
 
 class TestHeroSection:
     def test_hero_section_content(self):
-        """app.py contains st.title or st.header with 'Autopitch' before any widget."""
+        """app.py contains a hero element before any widget."""
         source = _source()
         lines = _lines()
 
-        # Must have a title/header mentioning Autopitch
-        assert re.search(r'st\.(title|header)\s*\(\s*["\'].*Autopitch', source), (
-            "app.py must have st.title() or st.header() containing 'Autopitch'"
+        # Must have a hero title element (native st.title/header or custom HTML)
+        hero_pattern = r'(st\.(title|header)\s*\(|hero-title|hero-badge)'
+        assert re.search(hero_pattern, source), (
+            "app.py must have a hero element (st.title, st.header, or custom hero HTML)"
         )
 
         # Hero text must appear before the first interactive widget
         hero_line = -1
         for i, line in enumerate(lines):
-            if re.search(r'st\.(title|header)\s*\(\s*["\'].*Autopitch', line):
+            if re.search(r'(st\.(title|header)\s*\(|hero-title|hero-badge)', line):
                 hero_line = i
                 break
 
@@ -253,7 +254,11 @@ class TestTemplatexlsxBytes:
         col_mock = mock.MagicMock()
         col_mock.__enter__ = mock.Mock(return_value=mock.MagicMock())
         col_mock.__exit__ = mock.Mock(return_value=False)
-        st_mock.columns.return_value = [col_mock, col_mock]
+        def _fake_columns(spec, **kwargs):
+            if isinstance(spec, int):
+                return [col_mock] * spec
+            return [col_mock] * len(spec)
+        st_mock.columns.side_effect = _fake_columns
         # Make context managers work (st.spinner, st.expander)
         ctx = mock.MagicMock()
         ctx.__enter__ = mock.Mock(return_value=mock.MagicMock())
@@ -292,7 +297,11 @@ class TestTemplatexlsxBytes:
         col_mock = mock.MagicMock()
         col_mock.__enter__ = mock.Mock(return_value=mock.MagicMock())
         col_mock.__exit__ = mock.Mock(return_value=False)
-        st_mock.columns.return_value = [col_mock, col_mock]
+        def _fake_columns2(spec, **kwargs):
+            if isinstance(spec, int):
+                return [col_mock] * spec
+            return [col_mock] * len(spec)
+        st_mock.columns.side_effect = _fake_columns2
         ctx = mock.MagicMock()
         ctx.__enter__ = mock.Mock(return_value=mock.MagicMock())
         ctx.__exit__ = mock.Mock(return_value=False)

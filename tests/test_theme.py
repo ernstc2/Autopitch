@@ -1,6 +1,6 @@
 """Structural tests for Streamlit theme configuration and app layout.
 
-Covers VISL-01 (config.toml navy theme) and VISL-02 (wide layout in app.py).
+Covers VISL-01 (config.toml dark navy theme) and VISL-02 (wide layout in app.py).
 All tests are file-level structural checks — no Streamlit runtime required.
 """
 
@@ -31,19 +31,19 @@ def test_has_theme_section():
     assert "theme" in data, "config.toml missing [theme] section"
 
 
-def test_primary_color_is_navy():
-    """VISL-01: primaryColor must be #0a2540 (deep navy)."""
+def test_primary_color_is_accent_blue():
+    """VISL-01: primaryColor must be #4a9eff (bright blue accent for dark theme)."""
     theme = _load_theme()
-    assert theme.get("primaryColor") == "#0a2540", (
-        f"primaryColor is {theme.get('primaryColor')!r}, expected '#0a2540'"
+    assert theme.get("primaryColor") == "#4a9eff", (
+        f"primaryColor is {theme.get('primaryColor')!r}, expected '#4a9eff'"
     )
 
 
-def test_base_is_light():
-    """VISL-01: base must be 'light'."""
+def test_base_is_dark():
+    """VISL-01: base must be 'dark'."""
     theme = _load_theme()
-    assert theme.get("base") == "light", (
-        f"base is {theme.get('base')!r}, expected 'light'"
+    assert theme.get("base") == "dark", (
+        f"base is {theme.get('base')!r}, expected 'dark'"
     )
 
 
@@ -56,27 +56,27 @@ def test_font_is_sans_serif():
 
 
 def test_background_color():
-    """VISL-01: backgroundColor must be #ffffff."""
+    """VISL-01: backgroundColor must be #0a1628 (deep navy)."""
     theme = _load_theme()
-    assert theme.get("backgroundColor") == "#ffffff", (
-        f"backgroundColor is {theme.get('backgroundColor')!r}, expected '#ffffff'"
+    assert theme.get("backgroundColor") == "#0a1628", (
+        f"backgroundColor is {theme.get('backgroundColor')!r}, expected '#0a1628'"
     )
 
 
 def test_secondary_bg_color():
-    """VISL-01: secondaryBackgroundColor must be #f0f4f8."""
+    """VISL-01: secondaryBackgroundColor must be #132238 (card navy)."""
     theme = _load_theme()
-    assert theme.get("secondaryBackgroundColor") == "#f0f4f8", (
+    assert theme.get("secondaryBackgroundColor") == "#132238", (
         f"secondaryBackgroundColor is {theme.get('secondaryBackgroundColor')!r}, "
-        "expected '#f0f4f8'"
+        "expected '#132238'"
     )
 
 
 def test_text_color():
-    """VISL-01: textColor must be #1a1a2e."""
+    """VISL-01: textColor must be #e8edf4 (soft white)."""
     theme = _load_theme()
-    assert theme.get("textColor") == "#1a1a2e", (
-        f"textColor is {theme.get('textColor')!r}, expected '#1a1a2e'"
+    assert theme.get("textColor") == "#e8edf4", (
+        f"textColor is {theme.get('textColor')!r}, expected '#e8edf4'"
     )
 
 
