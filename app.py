@@ -4,6 +4,7 @@ Upload an Excel financial workbook and download a consulting-quality PPTX deck.
 All pipeline logic lives in autopitch/pipeline.py — this file only renders widgets.
 """
 
+import hashlib
 import time
 from io import BytesIO
 from pathlib import Path
@@ -31,7 +32,7 @@ st.set_page_config(
 # Session state initialization — must come before any widget rendering
 # ---------------------------------------------------------------------------
 
-for _key in ("demo_pptx", "demo_elapsed", "demo_slides", "upload_pptx"):
+for _key in ("demo_pptx", "demo_elapsed", "demo_slides", "upload_pptx", "upload_hash"):
     if _key not in st.session_state:
         st.session_state[_key] = None
 
@@ -130,12 +131,13 @@ st.markdown(
 )
 
 if st.button("Try the Demo", type="primary"):
-    t0 = time.perf_counter()
-    with st.spinner("Generating deck from Apple FY2020–FY2024 data..."):
-        pptx_bytes = _run_demo_pipeline()
-    st.session_state["demo_pptx"] = pptx_bytes
-    st.session_state["demo_elapsed"] = time.perf_counter() - t0
-    st.session_state["demo_slides"] = 11  # always; deck always produces exactly 11 slides
+    if st.session_state["demo_pptx"] is None:
+        t0 = time.perf_counter()
+        with st.spinner("Generating deck from Apple FY2020–FY2024 data..."):
+            pptx_bytes = _run_demo_pipeline()
+        st.session_state["demo_pptx"] = pptx_bytes
+        st.session_state["demo_elapsed"] = time.perf_counter() - t0
+        st.session_state["demo_slides"] = 11
 
 # Render download button and stats based on session_state (DEMO-03, DEMO-04)
 # Rendered OUTSIDE the if-button block so it persists across reruns.
@@ -204,13 +206,19 @@ uploaded = st.file_uploader(
 if uploaded is not None:
     if st.button("Generate My Deck"):
         uploaded.seek(0)
-        with st.spinner("Generating deck..."):
-            try:
-                pptx_bytes = run_pipeline(uploaded)
-                st.session_state["upload_pptx"] = pptx_bytes
-                st.success("Done!")
-            except ValidationError as e:
-                st.error(str(e))
+        file_hash = hashlib.md5(uploaded.read()).hexdigest()
+        uploaded.seek(0)
+        if file_hash == st.session_state["upload_hash"] and st.session_state["upload_pptx"] is not None:
+            st.success("Same file — using cached result.")
+        else:
+            with st.spinner("Generating deck..."):
+                try:
+                    pptx_bytes = run_pipeline(uploaded)
+                    st.session_state["upload_pptx"] = pptx_bytes
+                    st.session_state["upload_hash"] = file_hash
+                    st.success("Done!")
+                except ValidationError as e:
+                    st.error(str(e))
 
 # Render upload download button based on session_state (persists across reruns)
 if st.session_state["upload_pptx"] is not None:

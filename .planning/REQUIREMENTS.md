@@ -23,13 +23,13 @@ Requirements for Portfolio Demo Polish milestone. Each maps to roadmap phases.
 
 ### Upload Path
 
-- [ ] **UPLD-01**: File uploader section with clear instructions for uploading custom Excel data
-- [ ] **UPLD-02**: In-app format guide (expandable accordion) showing required sheet names, column structure, and example values
-- [ ] **UPLD-03**: Downloadable Excel template with correct MIME type and binary handling
+- [x] **UPLD-01**: File uploader section with clear instructions for uploading custom Excel data
+- [x] **UPLD-02**: In-app format guide (expandable accordion) showing required sheet names, column structure, and example values
+- [x] **UPLD-03**: Downloadable Excel template with correct MIME type and binary handling
 
 ### Skills Showcase
 
-- [ ] **SKIL-01**: Tech stack section displaying 5-6 key technologies as badges with one-line rationale per tool
+- [x] **SKIL-01**: Tech stack section displaying 5-6 key technologies as badges with one-line rationale per tool
 
 ### Visual Polish
 
@@ -70,10 +70,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DEMO-02 | Phase 6 | Complete |
 | DEMO-03 | Phase 6 | Complete |
 | DEMO-04 | Phase 6 | Complete |
-| UPLD-01 | Phase 6 | Pending |
-| UPLD-02 | Phase 6 | Pending |
-| UPLD-03 | Phase 6 | Pending |
-| SKIL-01 | Phase 6 | Pending |
+| UPLD-01 | Phase 6 | Complete |
+| UPLD-02 | Phase 6 | Complete |
+| UPLD-03 | Phase 6 | Complete |
+| SKIL-01 | Phase 6 | Complete |
 | VISL-01 | Phase 7 | Pending |
 | VISL-02 | Phase 7 | Pending |
 
