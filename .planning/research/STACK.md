@@ -1,203 +1,221 @@
 # Technology Stack
 
-**Project:** Autopitch — Python financial deck generator (Excel -> PowerPoint + AI narrative)
-**Researched:** 2026-03-09
-**Research mode:** Training knowledge only (WebSearch, WebFetch, and Bash blocked in this environment)
+**Project:** Autopitch v1.1 — Portfolio Demo Polish
+**Domain:** Streamlit portfolio UI — demo experience, skills showcase, Cloud deployment
+**Researched:** 2026-03-10
+**Confidence:** HIGH (verified against official Streamlit docs and Community Cloud documentation)
 
-> **VERSION WARNING:** All version numbers below are derived from training data (cutoff August 2025).
-> Before coding, run `pip index versions <package>` or check PyPI for the true latest.
-> Pinned versions in `requirements.txt` should be set only after manual verification.
-
----
-
-## Recommended Stack
-
-### Excel Parsing
-
-| Technology | Version (verify) | Purpose | Why |
-|------------|-----------------|---------|-----|
-| openpyxl | ^3.1 | Read multi-sheet `.xlsx` workbooks | Pure-Python, no Excel dependency, full cell/formula/named-range access, sheet iteration, data type preservation. The standard for structural workbook reading in 2025. |
-| pandas | ^2.2 | DataFrame representation of parsed sheet data | Vectorized column operations, built-in `.pct_change()` / `.rolling()`, cleaner metric computation than raw openpyxl row loops. |
-
-**openpyxl vs pandas direct Excel read:** Use openpyxl for the structural read (sheet discovery, header detection, cell-level validation) and hand data off to pandas DataFrames for computation. Do not use `pd.read_excel()` as the primary parser — it silently drops formatting context needed for column mapping and skips validation opportunities.
-
-**Why not xlrd:** Dropped `.xlsx` support in v2.0 (2020). `.xls`-only now. Dead end.
-**Why not xlwings:** Requires a live Excel installation. Non-starter on CI/servers.
+> **Scope:** This document covers ONLY stack additions and changes needed for v1.1.
+> The v1.0 stack (python-pptx, matplotlib, openpyxl, Pydantic v2, anthropic SDK, Streamlit basics)
+> is already shipped and validated. Do not re-evaluate or re-install those packages.
 
 ---
 
-### Financial Computation
+## What v1.1 Needs From the Stack
 
-| Technology | Version (verify) | Purpose | Why |
-|------------|-----------------|---------|-----|
-| pandas | ^2.2 | Metric computation (growth rates, margins, ratios) | Already in stack for data representation. `.pct_change()`, `.div()`, boolean masking cover all required metrics without additional dependencies. |
-| numpy | ^1.26 (pandas dependency) | Underlying array math | Pulled in by pandas automatically. Use `numpy.nan` for missing-value handling in ratio computations. |
+| Capability | Source | Verdict |
+|------------|--------|---------|
+| Demo-first layout (hero, columns, tabs) | Streamlit stdlib | No new package — already in Streamlit |
+| One-click Apple demo button | `st.session_state` + `st.button` | No new package |
+| Skills/badge showcase | `st.badge` (added in Streamlit v1.55.0) | Requires Streamlit >= 1.55 (already in requirements.txt) |
+| Downloadable Excel template | `openpyxl` (already installed) + `io.BytesIO` | No new package |
+| UI theming / polished look | `.streamlit/config.toml` | Config file only, no new package |
+| Secrets on Community Cloud | `.streamlit/secrets.toml` + `st.secrets` | Config file only, no new package |
+| Streamlit Cloud deployment | `requirements.txt` (already exists) + GitHub | No new package; one new config file |
 
-**No need for:** `scipy`, `statsmodels`, or any ML library. The required metrics (revenue growth, EBITDA margin, D/E ratio, current ratio, cash conversion, ROE, ROA) are straightforward arithmetic on labeled columns. Adding heavier libraries would signal over-engineering to reviewers.
-
----
-
-### Chart Generation
-
-| Technology | Version (verify) | Purpose | Why |
-|------------|-----------------|---------|-----|
-| matplotlib | ^3.9 | Bar charts, line charts, waterfall charts embedded in PPTX | Outputs to BytesIO in-memory PNG/SVG; python-pptx accepts BytesIO directly via `add_picture()`. Fine-grained style control needed for Big 4 color palette (navy/teal, no chart borders, minimal gridlines). |
-
-**matplotlib vs plotly:** Plotly produces interactive HTML charts. python-pptx cannot embed Plotly output directly — it requires a headless browser render step (kaleido) or screenshot, adding a fragile dependency. Matplotlib renders directly to bytes in-process. For a static PPTX deliverable, matplotlib is the correct choice.
-
-**matplotlib vs chart shapes native to PPTX:** `python-pptx` has a native chart API (`prs.slides[i].shapes.add_chart()`). Avoid it for this project: the native chart XML is limited (no waterfall chart type), styling is verbose and brittle, and the output looks like a default Office chart. Matplotlib-rendered images give precise Big 4 aesthetic control.
-
-**Waterfall charts:** matplotlib has no built-in waterfall. Use a stacked bar trick (invisible base bar + visible delta bar) or the `waterfall_chart` third-party package (^0.2). Verify whether `waterfall_chart` is still maintained before use — if not, implement the stacked-bar approach manually (it's ~30 lines and has no external dependency).
+**Net result: zero new Python packages required for v1.1.** All capabilities are either in the
+existing Streamlit version (>=1.55.0 already pinned) or achieved through configuration files.
 
 ---
 
-### PowerPoint Generation
+## Recommended Stack Additions
 
-| Technology | Version (verify) | Purpose | Why |
-|------------|-----------------|---------|-----|
-| python-pptx | ^1.0 | Build `.pptx` file structure, add slides, text boxes, image placeholders | The only maintained pure-Python PPTX library. v1.0 (released 2024) introduced a cleaner API. Directly controls EMU-level positioning needed for precise Big 4 layout. |
+### New Files (Config, Not Code)
 
-**Why not LibreOffice / COM automation:** Requires installed Office suite, non-portable, not suitable for a portfolio tool that should run anywhere.
+| File | Purpose | Why |
+|------|---------|-----|
+| `.streamlit/config.toml` | App theming — colors, font, layout | Community-standard approach for Streamlit brand polish. Sets `primaryColor`, `backgroundColor`, `layout = "wide"`. No CSS hacks needed for basic visual hierarchy. |
+| `.streamlit/secrets.toml` | Local secrets mirror (gitignored) | Enables `st.secrets["ANTHROPIC_API_KEY"]` locally. Streamlit Community Cloud reads secrets from the dashboard, not from `.env`, so `python-dotenv` approach must be supplemented. |
 
-**Slide layout strategy:** Do not use the default slide layouts from a blank presentation — they are ugly Office defaults. Define a custom `.pptx` template file (committed to the repo) with pre-configured masters: title slide, section divider, content slide (chart left, bullets right), full-bleed chart slide. Load via `Presentation('template.pptx')`. This approach is the correct python-pptx pattern and avoids reimplementing slide geometry in code.
+### Streamlit Features to Use (Already Available in >= 1.35)
 
----
+These are built-in Streamlit capabilities — no install needed, just need to be used in `app.py`.
 
-### AI Narrative Generation
-
-| Technology | Version (verify) | Purpose | Why |
-|------------|-----------------|---------|-----|
-| anthropic | ^0.28 (verify — actively versioned) | Python SDK for Claude API calls | Official SDK from Anthropic. Handles auth, retry, streaming. Use `claude-sonnet-4-5` or latest available `claude-sonnet` model — balances quality and cost. The PROJECT.md specifies Claude; this is a project constraint not a choice. |
-
-**API call strategy:** One call per deck with a structured JSON context block containing all computed metrics and growth rates. Do not call per-slide — it multiplies cost and creates tonal inconsistency. Design a single prompt that returns a JSON object keyed by slide section (e.g., `{"revenue": {"title": "...", "bullets": ["...", "..."]}, "margins": {...}}`). Parse and distribute to slides.
-
-**Model selection:** `claude-sonnet-4-5` at research time (August 2025). As of March 2026 a newer Sonnet version may be available — always use the latest `claude-sonnet` model ID available in your account. Avoid Haiku for this use case: financial narrative quality degrades noticeably on shorter models. Avoid Opus: overkill for structured bullet generation and expensive for a demo tool.
-
-**Environment variable:** `ANTHROPIC_API_KEY` loaded via `python-dotenv` (see Supporting Libraries).
-
----
-
-### Web UI
-
-| Technology | Version (verify) | Purpose | Why |
-|------------|-----------------|---------|-----|
-| streamlit | ^1.35 | Browser-based file upload and PPTX download | Zero backend infrastructure, Python-native, file upload widget, `st.download_button()` for PPTX delivery. Produces an impressive demo with ~50 lines. The PROJECT.md mandates this. |
-
-**Streamlit vs Gradio:** Both are viable for a demo UI. Streamlit is more widely recognized by tech consulting interviewers, has better layout control for a polished look, and has a larger ecosystem. Gradio is better suited to ML model demos. Streamlit is correct here.
-
-**Statelessness:** Each Streamlit session runs the full pipeline independently. No session state persistence needed beyond the current request lifecycle. Use `st.session_state` only if adding progress display.
+| Feature | API | Purpose | Notes |
+|---------|-----|---------|-------|
+| Tabbed layout | `st.tabs(["Demo", "Upload", "How It Works"])` | Organize content into clear sections | Available since Streamlit 1.29 |
+| Column layout | `st.columns([1, 2])` | Side-by-side hero layout, badge grid | Core Streamlit, always available |
+| Session state | `st.session_state` | Track demo mode vs. upload mode; persist generated deck bytes | Needed so "Generate Demo" button result survives reruns |
+| Caching for demo data | `@st.cache_data` | Load `demo/apple_financials.xlsx` once as bytes, not per user rerun | Avoids re-reading disk on every interaction |
+| Badge | `st.badge(label, color, icon)` | Tech stack skill tags — "Python", "Claude API", "Streamlit" | Added in Streamlit v1.55.0; confirmed in official docs |
+| Expander | `st.expander("Excel format guide")` | Collapsible instructions for custom upload | Keeps UI clean; lazy-renders content |
+| Download button | `st.download_button()` | Already used in v1.0 for PPTX; same pattern for Excel template | No change needed |
 
 ---
 
-### CLI Interface
+## Secrets Management for Cloud Deployment
 
-| Technology | Purpose | Why |
-|------------|---------|-----|
-| argparse (stdlib) | `python generate.py financials.xlsx` CLI | No external dependency. Simple single-argument CLI doesn't need Click or Typer. Stdlib argparse is sufficient and signals clean Python to reviewers. |
+### The Problem
 
-**Why not Click/Typer:** Adds a dependency for a CLI with one positional argument. Overkill. If the CLI grows beyond 3-4 flags, migrate to Typer (type-annotated, modern feel) — but do not preemptively add it.
+`python-dotenv` reads `.env` files, which are gitignored and not present on Streamlit Community Cloud.
+The current `app.py` calls `load_dotenv()` before pipeline execution. This works locally but the
+`ANTHROPIC_API_KEY` is missing on Cloud without additional handling.
+
+### The Solution
+
+Streamlit's `st.secrets` system automatically exposes top-level TOML keys as environment variables.
+This means `os.environ["ANTHROPIC_API_KEY"]` will work on Cloud if the key is set in the Community
+Cloud dashboard — no code change needed to the `anthropic` SDK call itself.
+
+**Required change in `app.py`:** Add a `st.secrets` fallback before `load_dotenv()`:
+
+```python
+import os
+import streamlit as st
+from dotenv import load_dotenv
+
+# Load from .env locally; on Streamlit Cloud, st.secrets populates os.environ automatically.
+# Explicitly bridge st.secrets → os.environ as a safety net for any execution order issues.
+if "ANTHROPIC_API_KEY" in st.secrets:
+    os.environ["ANTHROPIC_API_KEY"] = st.secrets["ANTHROPIC_API_KEY"]
+load_dotenv()  # still useful locally; no-op on Cloud if .env absent
+```
+
+**Local `.streamlit/secrets.toml` format** (gitignored, mirrors `.env`):
+
+```toml
+ANTHROPIC_API_KEY = "sk-ant-..."
+```
+
+**Community Cloud setup:** Paste the secrets.toml contents into App Settings → Secrets in the
+Streamlit Community Cloud dashboard. Updated without redeployment.
 
 ---
 
-### Supporting Libraries
+## Streamlit Community Cloud Deployment Requirements
 
-| Library | Version (verify) | Purpose | When to Use |
-|---------|-----------------|---------|-------------|
-| python-dotenv | ^1.0 | Load `ANTHROPIC_API_KEY` from `.env` file | Always — prevents hardcoded credentials, standard pattern |
-| Pillow (PIL) | ^10.x (matplotlib dependency) | Image processing for chart byte streams | Pulled in by matplotlib; no direct usage needed |
-| pytest | ^8.x | Unit tests for metric computation and data validation | Test layer for financial formula correctness — critical for portfolio credibility |
-| pytest-cov | ^5.x | Coverage reporting | Pair with pytest; shows test discipline to reviewers |
-| black | ^24.x | Code formatting | Run pre-commit; consulting codebase aesthetics matter |
-| ruff | ^0.4 | Linting | Faster than flake8/pylint, single config, 2025 standard |
+### What Community Cloud Needs
+
+| Requirement | Status | Action |
+|-------------|--------|--------|
+| Public GitHub repo | Existing repo | Ensure repo is public (or linked private) |
+| `requirements.txt` in repo root | Already exists | Verify all packages listed; Streamlit itself is optional to list |
+| Python version selection | Defaults to latest (3.13) | Explicitly select 3.11 in "Advanced settings" during deploy dialog to match local dev |
+| `ANTHROPIC_API_KEY` secret | In `.env` locally | Paste into Community Cloud dashboard secrets after deploy |
+| `packages.txt` | Not needed | No system-level apt dependencies (no C extensions, no binary tools) |
+| Entry point | `app.py` at repo root | Already correct |
+
+### Python Version Pin
+
+Community Cloud now defaults to Python 3.13 (confirmed via community discussion March 2026).
+The project targets Python 3.11 (`pyproject.toml` specifies `requires-python = ">=3.11"`).
+Select Python 3.11 explicitly in the deploy dialog's Advanced settings — you cannot change it
+after deployment without deleting and redeploying the app.
+
+**HIGH confidence** — Official Streamlit docs + community forum confirmation (multiple threads).
+
+### `requirements.txt` for Cloud
+
+The current `requirements.txt` is adequate. One note: `python-dotenv` must remain listed because
+`app.py` imports it. On Cloud the `load_dotenv()` call is a no-op (no `.env` present), but the
+import still needs to resolve.
+
+No new packages need to be added.
+
+---
+
+## Downloadable Excel Template
+
+The "Download Excel template" feature uses the existing `openpyxl` package. Pattern:
+
+```python
+from io import BytesIO
+import openpyxl
+
+@st.cache_data
+def build_template_bytes() -> bytes:
+    wb = openpyxl.load_workbook("demo/apple_financials.xlsx")
+    # Optionally strip data, leaving structure and headers only
+    buf = BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
+```
+
+Then `st.download_button(data=build_template_bytes(), file_name="autopitch_template.xlsx")`.
+
+No new package needed — `openpyxl` is already installed and capable of writing to BytesIO.
+
+---
+
+## UI Theming
+
+Streamlit theming is configured via `.streamlit/config.toml`. A minimal dark/professional theme
+appropriate for a financial tool:
+
+```toml
+[theme]
+base = "light"
+primaryColor = "#1B3A6B"       # Navy — Big 4 consulting anchor color
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F4F6FA"
+textColor = "#1A1A2E"
+font = "sans serif"
+```
+
+This file is committed to the repo (no secrets) and applies both locally and on Cloud.
+
+**No external CSS injection needed** for the v1.1 scope. `st.markdown(unsafe_allow_html=True)` with
+custom CSS is an option but adds fragile maintenance surface — avoid unless theming config.toml
+proves insufficient for specific layout needs.
 
 ---
 
 ## Alternatives Considered
 
-| Category | Recommended | Alternative | Why Not |
-|----------|-------------|-------------|---------|
-| Excel read | openpyxl + pandas | `pd.read_excel()` only | Loses structural validation, silently skips header rows |
-| Excel read | openpyxl + pandas | xlrd | Dropped .xlsx support in 2020; dead end |
-| Excel read | openpyxl + pandas | xlwings | Requires live Excel installation |
-| Charts | matplotlib (to image) | python-pptx native charts | No waterfall type; ugly defaults; verbose styling |
-| Charts | matplotlib (to image) | plotly + kaleido | Headless browser dependency; fragile; slower |
-| CLI | argparse | Click / Typer | Unnecessary dependency for single-argument CLI |
-| AI | anthropic SDK | openai SDK + GPT-4o | Project constraint specifies Claude; also: Claude's structured output quality for financial narrative is strong |
-| Formatting | black + ruff | flake8 + isort | ruff replaces both flake8 and isort in one tool; 2025 standard |
+| Recommended | Alternative | Why Not |
+|-------------|-------------|---------|
+| `st.badge` for skill tags | Custom HTML badges via `st.markdown(unsafe_allow_html=True)` | st.badge is the official API (added v1.55.0); HTML injection is fragile across Streamlit upgrades |
+| `.streamlit/config.toml` for theming | CSS injection via `st.markdown` | config.toml is the stable, supported path; CSS injection bypasses the theming system and breaks on Streamlit updates |
+| `st.tabs` for layout sections | Separate Streamlit pages (multipage app) | Multipage adds navigation complexity and breaks the single-URL demo flow; tabs keep everything on one screen |
+| `@st.cache_data` for demo bytes | Re-reading demo file on each rerun | cache_data runs once per session and is the documented pattern for file loading in Streamlit |
+| `st.secrets` + `os.environ` bridge | Rewrite pipeline to read `st.secrets` directly | Pipeline has no Streamlit dependency and should stay that way; os.environ bridge keeps pipeline clean |
+| Streamlit Community Cloud | Render / Heroku / Railway | Community Cloud is free, zero-config, Streamlit-native; handles Python env + secrets natively; best fit for a portfolio demo |
 
 ---
 
-## Python Version
+## What NOT to Add
 
-Use Python **3.11** or **3.12**.
-
-- 3.11: Significant performance improvements over 3.10; stable; widely available in CI.
-- 3.12: Even faster, better error messages, available since Oct 2023; good choice if your environment supports it.
-- Avoid 3.13 (alpha/RC status as of research cutoff; ecosystem compatibility not confirmed).
-
-Pin in `.python-version` for reproducibility.
-
----
-
-## Installation
-
-```bash
-# Create virtual environment
-python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
-
-# Core runtime
-pip install openpyxl pandas matplotlib python-pptx anthropic streamlit python-dotenv
-
-# Dev dependencies
-pip install pytest pytest-cov black ruff
-
-# Optional (if implementing waterfall chart via package instead of manual)
-# pip install waterfall_chart  # verify maintenance status before using
-```
-
-Freeze after installation:
-```bash
-pip freeze > requirements.txt
-```
-
-Recommended `requirements.txt` structure (split runtime vs dev):
-```
-# requirements.txt — runtime
-openpyxl>=3.1,<4.0
-pandas>=2.2,<3.0
-matplotlib>=3.9,<4.0
-python-pptx>=1.0,<2.0
-anthropic>=0.28,<1.0
-streamlit>=1.35,<2.0
-python-dotenv>=1.0,<2.0
-
-# requirements-dev.txt — development only
-pytest>=8.0,<9.0
-pytest-cov>=5.0,<6.0
-black>=24.0,<25.0
-ruff>=0.4,<1.0
-```
+| Avoid | Why | Use Instead |
+|-------|-----|-------------|
+| `streamlit-extras` | Third-party component library; adds dependency for minor UI niceties | Native Streamlit has everything needed for v1.1 |
+| `streamlit-option-menu` | Third-party nav component; overkill for a 2-3 section layout | `st.tabs` is built-in and sufficient |
+| `plotly` | Adds ~30MB to deploy footprint; interactive charts don't embed in PPTX anyway | `matplotlib` (already used) handles all charting |
+| `xlsxwriter` | Separate Excel-write library; openpyxl already handles write-to-BytesIO | `openpyxl` (already installed) |
+| Additional AI/ML libraries | Out of scope for UI polish milestone | N/A |
 
 ---
 
-## Confidence Assessment
+## Version Compatibility
 
-| Library | Confidence | Reason |
-|---------|------------|--------|
-| openpyxl | HIGH | Stable, dominant library for years; no competitor emerged |
-| pandas | HIGH | Foundational; version 2.x is well-established |
-| matplotlib | HIGH | Correct choice for static image embedding; well-understood |
-| python-pptx | MEDIUM | v1.0 released in 2024 — API may have changed from 0.x; verify migration notes |
-| anthropic SDK | LOW-MEDIUM | Actively developed; version number changes rapidly; verify latest before pinning |
-| streamlit | MEDIUM | Actively developed; minor API changes between minor versions; verify `st.download_button` signature |
-| argparse | HIGH | Stdlib; no version concern |
-| python-dotenv | HIGH | Stable, minimal library; no churn |
+| Package | Current Pin | Notes |
+|---------|-------------|-------|
+| `streamlit` | `>=1.55.0` | v1.55.0 introduced `st.badge`; already pinned in requirements.txt |
+| `openpyxl` | `>=3.1.0` | Write-to-BytesIO supported since 3.x; no change needed |
+| `python-dotenv` | `>=1.0.0` | Retain; load_dotenv() is a no-op on Cloud, harmless |
+
+No version bumps required. No new packages required.
 
 ---
 
 ## Sources
 
-- Training knowledge (cutoff August 2025) — all findings
-- Project constraints from `.planning/PROJECT.md` (openpyxl/pandas, python-pptx, matplotlib/plotly, Streamlit explicitly listed as constraints)
-- Version numbers require verification via `pip index versions <package>` or https://pypi.org before pinning
+- [Streamlit Community Cloud — App dependencies](https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/app-dependencies) — Python version, requirements.txt behavior, packages.txt — HIGH confidence
+- [Streamlit Community Cloud — Secrets management](https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/secrets-management) — secrets.toml format, dashboard upload — HIGH confidence
+- [Streamlit secrets management concepts](https://docs.streamlit.io/develop/concepts/connections/secrets-management) — st.secrets as env vars, dotenv coexistence — HIGH confidence
+- [st.badge API reference](https://docs.streamlit.io/develop/api-reference/text/st.badge) — version introduced (v1.55.0), parameters — HIGH confidence
+- [Streamlit theming: colors and borders](https://docs.streamlit.io/develop/concepts/configuration/theming-customize-colors-and-borders) — config.toml options — HIGH confidence
+- [Streamlit community forum: Python 3.13 default on Cloud](https://discuss.streamlit.io/t/streamlit-cloud-using-python-3-13-despite-runtime-txt-specifying-3-11/113759) — Python version default behavior — MEDIUM confidence (community, not official docs)
+
+---
+*Stack research for: Autopitch v1.1 Portfolio Demo Polish*
+*Researched: 2026-03-10*

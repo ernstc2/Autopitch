@@ -2,8 +2,8 @@
 
 **Domain:** Python Excel-to-PowerPoint financial deck generator with AI narrative
 **Project:** Autopitch
-**Researched:** 2026-03-09
-**Confidence note:** External search tools unavailable in this session. All findings are based on documented library behaviors from training data (openpyxl, python-pptx, matplotlib, anthropic SDK, Streamlit). Confidence levels assigned per claim. Validate critical items against current official docs before acting.
+**Researched:** 2026-03-09 (v1.0 core pipeline) | updated 2026-03-10 (v1.1 portfolio demo features)
+**Confidence note:** v1.0 section based on training-data knowledge. v1.1 section verified against Streamlit official docs and Anthropic API docs (see sources).
 
 ---
 
@@ -267,7 +267,346 @@ Mistakes that cause rewrites, broken output, or demo failures.
 
 ---
 
-## Phase-Specific Warnings
+---
+
+# v1.1 Portfolio Demo Feature Pitfalls
+
+*Added: 2026-03-10. Focus: adding portfolio demo UI, skills showcase, data templates, and Streamlit Cloud deployment to the existing app.*
+*Confidence: HIGH — verified against Streamlit official docs and Anthropic API docs.*
+
+---
+
+## Critical Pitfalls (v1.1)
+
+---
+
+### Pitfall 17: API Key Committed to Public Repository
+
+**What goes wrong:**
+The `.env` file contains `ANTHROPIC_API_KEY`. When the repo is made public for Streamlit Cloud deployment, or a `secrets.toml` file is accidentally committed, the key is exposed. GitHub's secret scanning notifies Anthropic, who auto-revokes the key. The live demo breaks immediately — often before the first visitor arrives.
+
+**Why it happens:**
+Developer makes the repo public for Streamlit Cloud and forgets the key exists in `.env`. Or creates `.streamlit/secrets.toml` for local testing and commits it alongside other config files, not realizing it contains the key.
+
+**How to avoid:**
+- Confirm `.gitignore` covers both `.env` and `.streamlit/secrets.toml` before setting repo visibility to public
+- Add `.streamlit/secrets.toml` to `.gitignore` now, before creating it, even if just for local use
+- Set `ANTHROPIC_API_KEY` only through the Streamlit Community Cloud dashboard (Advanced Settings → Secrets) — never in any file that touches version control
+- In `app.py`, access the key via `st.secrets["ANTHROPIC_API_KEY"]` with a fallback to `os.getenv("ANTHROPIC_API_KEY")` for local dev compatibility
+
+**Warning signs:**
+- Repo is "Public" on GitHub but the Streamlit Cloud secrets panel has not been configured
+- `git status` shows `.env` or `secrets.toml` as a new untracked file right before going public
+- App works locally (dotenv path) but fails on Cloud with `AuthenticationError`
+
+**Phase to address:**
+Streamlit Cloud Deployment phase — first task before any other deployment work.
+
+---
+
+### Pitfall 18: Download Button Triggers Full App Rerun, Losing the Generated Deck
+
+**What goes wrong:**
+The current `app.py` generates `pptx_bytes` inside the `if st.button("Generate Deck"):` block and immediately renders `st.download_button`. When the user clicks "Download PPTX", Streamlit reruns the entire script. The generate block does not re-execute (button state is not sticky), so `pptx_bytes` goes out of scope and the download button disappears. The user must regenerate.
+
+**Why it happens:**
+`st.download_button` is a widget; clicking it triggers a script rerun like any other widget. Variables set inside `if st.button():` blocks are not automatically persisted between reruns.
+
+**How to avoid:**
+- Store `pptx_bytes` in `st.session_state["pptx_bytes"]` immediately after generation
+- Render `st.download_button` unconditionally from session state on every rerun, not nested inside the generate block
+- Optionally use `on_click="ignore"` on the download button (suppresses the rerun entirely for a pure frontend download action)
+
+**Warning signs:**
+- Clicking "Download PPTX" clears the success message and the button itself
+- User must click "Generate Deck" again after every download attempt
+- This is not apparent in local dev because the generate button is clicked frequently during testing
+
+**Phase to address:**
+Demo-first Landing / Core UI Polish phase — fix session state persistence before building any demo flow on top.
+
+---
+
+### Pitfall 19: Streamlit Cloud App Sleeps After 12 Hours — Demo Invisible to Portfolio Visitors
+
+**What goes wrong:**
+Streamlit Community Cloud hibernates apps with no traffic after approximately 12 hours. A recruiter visiting the portfolio link sees a "This app has gone to sleep" page with a manual wake button. Many visitors click away rather than waiting the 30-second wake time. The demo investment is wasted at the highest-stakes moment.
+
+**Why it happens:**
+Free tier resource conservation policy. No built-in option exists to prevent this on the free plan.
+
+**How to avoid:**
+- Set up a GitHub Actions cron job that sends a GET request to the app URL every 6 hours — this counts as traffic and keeps the app awake
+- Add a one-line note to the portfolio page: "Live demo — may take ~30s to wake if inactive." Setting expectations reduces abandonment
+- Commit the keep-alive workflow before sharing the live URL publicly
+
+**Warning signs:**
+- No keep-alive mechanism in place before the portfolio link is shared
+- App URL has received no visits in 12+ hours
+
+**Phase to address:**
+Streamlit Cloud Deployment phase — configure keep-alive workflow immediately after first successful deployment.
+
+---
+
+### Pitfall 20: Dev Dependencies in requirements.txt Bloat Build and Risk Conflicts
+
+**What goes wrong:**
+The current `requirements.txt` includes `pytest>=8.0.0` and `pytest-cov>=5.0.0`. These are dev-only dependencies. On Streamlit Cloud they increase build time and can create dependency conflicts (pytest pulls in `pluggy`, `iniconfig`, `packaging` which may conflict with pinned versions of production packages). Streamlit Cloud reads only `requirements.txt` — there is no separation.
+
+**Why it happens:**
+Single-file dev+prod requirements is the fastest path early in a project and works fine locally. The problem surfaces at deployment time.
+
+**How to avoid:**
+- Create `requirements-dev.txt` containing `-r requirements.txt` plus `pytest`, `pytest-cov`, and any other dev tools
+- Strip `requirements.txt` down to production-only deps: `anthropic`, `openpyxl`, `pydantic`, `streamlit`, `python-dotenv`, `python-pptx`, `matplotlib`
+- Streamlit Cloud only reads `requirements.txt` — dev deps stay out of the build entirely
+
+**Warning signs:**
+- `requirements.txt` contains `pytest`, `pytest-cov`, `black`, `mypy`, or similar
+- Streamlit Cloud build log shows conflict warnings during dependency resolution
+- Build time is disproportionately long
+
+**Phase to address:**
+Streamlit Cloud Deployment phase — clean up requirements.txt before the first deployment attempt.
+
+---
+
+### Pitfall 21: python-pptx and matplotlib Missing from requirements.txt — Silent Build Failure
+
+**What goes wrong:**
+The current `requirements.txt` does not include `python-pptx` or `matplotlib`. They are installed locally in the virtual environment but not declared. On Streamlit Cloud, they are absent. The app fails with `ModuleNotFoundError` at runtime, not at build time. Chart generation and deck building are completely broken on Cloud even though they work locally.
+
+**Why it happens:**
+Packages installed locally during development without being added to `requirements.txt` — an extremely common omission. There is no build-time enforcement that all imports have corresponding requirements entries.
+
+**How to avoid:**
+- Add `python-pptx>=1.0.0` and `matplotlib>=3.8.0` to `requirements.txt` before first deployment
+- After deployment, verify a complete deck is generated on Cloud by running the Apple demo end-to-end and opening the downloaded PPTX
+- Run `pip list` in the virtual env and diff against `requirements.txt` to catch any other missing packages
+
+**Warning signs:**
+- `python-pptx` and `matplotlib` not in `requirements.txt` (confirmed — they are absent in the current file)
+- Streamlit Cloud build log shows no mention of these packages being installed
+- App errors immediately on deck generation with `ModuleNotFoundError`
+
+**Phase to address:**
+Streamlit Cloud Deployment phase — fix requirements.txt before the first deployment attempt. This is a guaranteed deployment failure if not addressed.
+
+---
+
+## Moderate Pitfalls (v1.1)
+
+---
+
+### Pitfall 22: One-Click Demo Calls Claude API on Every Button Press — API Costs and 429 Risk
+
+**What goes wrong:**
+The one-click Apple demo calls `run_pipeline()` on every click, which includes a full Anthropic API call. Rapid successive clicks (or a widely shared link) accumulate API costs and can hit rate limits, returning a 429 error as a raw traceback during a live recruiter demo.
+
+**Why it happens:**
+The pipeline is stateless by design — every call goes all the way through. No caching layer exists.
+
+**How to avoid:**
+- Wrap the Apple demo call in `@st.cache_data` keyed on the demo file's content hash — generates once per session, returns cached bytes on subsequent clicks
+- Catch `anthropic.RateLimitError` and `anthropic.APIError` explicitly and show a user-friendly error message instead of a traceback
+- Consider pre-generating the Apple deck as a static `.pptx` asset committed to the repo — eliminates API cost on demo entirely, though at the cost of showing a fixed rather than live-generated output (label it clearly if doing this)
+
+**Warning signs:**
+- No `@st.cache_data` on the demo generation path
+- API errors surfaced as raw Python exceptions
+- Multiple rapid test clicks during development noticeably drain API credits
+
+**Phase to address:**
+Demo-first Landing phase — caching strategy must be decided before wiring the one-click demo button.
+
+---
+
+### Pitfall 23: Skills Showcase Section Reads as Resume Padding, Not Technical Evidence
+
+**What goes wrong:**
+A tech badge wall listing "Python, Streamlit, Pydantic, Anthropic API..." without context provides no signal to a technical reviewer. Recruiters who know the stack see it as filler; those who don't know the stack can't evaluate it. The section actively hurts the impression by taking up space without adding value.
+
+**Why it happens:**
+Skill lists are the default pattern for portfolio tech showcases. Adding decision rationale requires knowing the codebase, which takes extra effort. The temptation is to ship the list and move on.
+
+**How to avoid:**
+- For each key technology, write one sentence explaining the specific decision that was made and why: "Pydantic v2 frozen models — enforces immutable data contracts through the pipeline, preventing silent state mutation between parse, compute, and render phases"
+- Limit the list to 5-6 technologies that represent genuine architectural decisions. Omit boilerplate items (pytest, git, VS Code)
+- Link each item to the relevant source file so reviewers can verify claims directly
+
+**Warning signs:**
+- Skills section is a list of library names with no rationale
+- Items like "Git" or "pytest" are included (signals padding, not design thinking)
+- The section is longer than the demo explanation
+
+**Phase to address:**
+Skills Showcase phase.
+
+---
+
+### Pitfall 24: File Uploader Shown Before Demo — Buries the Main Value Proposition
+
+**What goes wrong:**
+Showing the file uploader widget as the primary UI element forces every visitor to bring their own Excel file before they can see anything. Portfolio visitors (recruiters, interviewers) will not have a compatible Excel file ready. The tool's capability is gated behind a prerequisite that most visitors cannot fulfill. They leave without seeing anything.
+
+**Why it happens:**
+The current `app.py` was built for actual users who have data. Portfolio visitors are a different audience.
+
+**How to avoid:**
+- Hero section first: description of what the tool does + "Try the Apple demo" button prominently above the fold
+- File uploader second: in a separate section labeled "Upload your own data" with a link to the template download
+- Use tabs or visual hierarchy (not buried expanders) to make both paths equally discoverable
+
+**Warning signs:**
+- `st.file_uploader` is the first visible element on the page
+- There is no way to generate a deck without uploading a file
+- A visitor who lands on the page sees a file upload widget with no context
+
+**Phase to address:**
+Demo-first Landing phase.
+
+---
+
+### Pitfall 25: Excel Template Download Returns Corrupt or Empty File
+
+**What goes wrong:**
+A downloadable Excel template created with openpyxl and served via `st.download_button` can silently produce a corrupt file if: the BytesIO buffer position is not reset before calling `.getvalue()`, the MIME type is wrong (browser treats it as text), or the template file is opened from disk in text mode instead of binary mode.
+
+**Why it happens:**
+Binary file handling in Streamlit has several known footguns. The MIME type for xlsx is non-obvious. Community reports show the first few download clicks sometimes fail on deployed apps before subsequent clicks succeed — a transient Streamlit Cloud artifact.
+
+**How to avoid:**
+- Correct MIME type: `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
+- If loading a pre-built template from disk: `open("demo/template.xlsx", "rb").read()` — binary mode explicitly
+- If generating with openpyxl: `buf = BytesIO(); wb.save(buf); buf.seek(0); data = buf.getvalue()`
+- Test the downloaded file opens without Excel repair prompts on both Windows and Mac
+
+**Warning signs:**
+- Excel opens the downloaded file with a "repair" prompt
+- File size is 0 bytes or suspiciously small
+- First download click shows "file not available" but later clicks work
+
+**Phase to address:**
+Data Template phase.
+
+---
+
+## Technical Debt Patterns (v1.1)
+
+| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
+|----------|-------------------|----------------|-----------------|
+| Single `requirements.txt` for dev + prod | Less files to manage | Dependency conflicts, bloated Cloud build, confuses contributors | Never — split before first deployment |
+| `load_dotenv()` only, no `st.secrets` fallback | Works locally | Fails on Streamlit Cloud where `.env` is absent | Never for deployed app — add `st.secrets` path |
+| Skills list without decision rationale | Fast to write | Signals padding, not depth; reviewers skip it | Never for a portfolio targeting senior technical roles |
+| Pre-generating Apple demo deck as static bytes | Eliminates API cost on demo | Demo does not reflect live Claude output | Acceptable if clearly labeled "pre-generated sample output" |
+| Loose `>=` bounds on all packages in requirements.txt | Always installs latest | Output can change silently when matplotlib or python-pptx updates | Acceptable for non-rendering libs; pin matplotlib and python-pptx |
+
+---
+
+## Integration Gotchas (v1.1)
+
+| Integration | Common Mistake | Correct Approach |
+|-------------|----------------|------------------|
+| Streamlit Cloud Secrets | Committing `secrets.toml` or using `load_dotenv()` only | Set key in Streamlit Cloud dashboard only; access via `st.secrets["ANTHROPIC_API_KEY"]` with `os.getenv` fallback |
+| `st.download_button` + generated bytes | Nesting download button inside generate block without session state | Store bytes in `st.session_state`; render download button unconditionally from state |
+| `st.download_button` + `.xlsx` template | Wrong MIME type or reading file in text mode | MIME: `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`; read in `"rb"` mode |
+| Anthropic SDK on Cloud | `AuthenticationError` or `RateLimitError` shown as raw traceback | Catch both explicitly; show user-friendly messages; check `st.secrets` before `os.getenv` |
+| Demo file path on Cloud | Hardcoded local path like `demo/apple_financials.xlsx` | Use `pathlib.Path(__file__).parent / "demo" / "apple_financials.xlsx"` for path-independent resolution |
+
+---
+
+## Performance Traps (v1.1)
+
+| Trap | Symptoms | Prevention | When It Breaks |
+|------|----------|------------|----------------|
+| Claude API call on every demo button click | Slow app (10-15s per click), API costs accumulate, 429 risk | `@st.cache_data` on demo pipeline call keyed on file hash | Every click without caching |
+| matplotlib figure leak | Memory grows with each deck generation; Cloud OOM after ~10 sessions | `plt.close('all')` after each figure saved to bytes | After ~10-20 deck generations in one session |
+| No `max_upload_size` limit | Large user-uploaded files (>5 MB) slow parsing or timeout | Add `server.maxUploadSize = 10` in `.streamlit/config.toml` | Files significantly larger than Apple demo (~50 KB) |
+
+---
+
+## Security Mistakes (v1.1)
+
+| Mistake | Risk | Prevention |
+|---------|------|------------|
+| `ANTHROPIC_API_KEY` in public repo or `secrets.toml` | Key auto-revoked within minutes; demo breaks; key must be regenerated | Gitignore `.env` and `.streamlit/secrets.toml`; set key only in Streamlit Cloud dashboard |
+| Displaying `st.secrets` values in UI for debugging | Key visible to all app visitors | Never log or render secret values; remove all debug `st.write(st.secrets)` before deployment |
+| No rate limiting on generate button | Rapid clicking drains API credits or triggers 429 | Disable generate button while pipeline is running using `st.session_state` flag |
+
+---
+
+## UX Pitfalls (v1.1)
+
+| Pitfall | User Impact | Better Approach |
+|---------|-------------|-----------------|
+| File uploader shown before demo button | Recruiter cannot try tool without data; leaves without seeing output | Hero + demo button first; file uploader below the fold |
+| No progress feedback during 10-15s API call | Visitor thinks app is frozen; abandons | `st.spinner` with descriptive message; optionally show stage labels |
+| Download button disappears after click | User thinks download failed; regenerates unnecessarily | Persist download button in session state until new file is uploaded |
+| Template instructions buried in expander | Users who want custom data give up finding the format | Inline instructions in upload section; template download link next to uploader |
+| Skills showcase section has no decision rationale | Technical reviewers dismiss it as padding | 5-6 items max, each with one-sentence rationale linked to a source file |
+
+---
+
+## "Looks Done But Isn't" Checklist (v1.1)
+
+- [ ] **Secrets on Cloud:** App runs without local `.env` file — test by temporarily removing `.env` and relying on `st.secrets` path
+- [ ] **Download persistence:** Clicking "Download PPTX" 3 times without regenerating keeps the button and bytes visible each time
+- [ ] **Demo file accessible on Cloud:** `demo/apple_financials.xlsx` is committed to the repo (not gitignored) and the path resolves correctly at Cloud runtime
+- [ ] **Keep-alive active:** GitHub Actions keep-alive workflow is enabled and has run at least once before the portfolio link is shared
+- [ ] **Dev deps removed:** `requirements.txt` does not include `pytest` or `pytest-cov` — verified in Streamlit Cloud build log
+- [ ] **python-pptx and matplotlib listed:** Cloud build log shows these packages installed; deck generation works end-to-end on Cloud
+- [ ] **Template download opens cleanly:** Downloaded `.xlsx` opens in Excel without a repair prompt; all sheets and formatting present
+- [ ] **API errors are friendly:** Supplying an invalid API key shows a user-readable message, not a raw traceback
+- [ ] **Demo button loads within 5 seconds:** Hero section and one-click demo are visible without scrolling on a 1280px viewport
+
+---
+
+## Recovery Strategies (v1.1)
+
+| Pitfall | Recovery Cost | Recovery Steps |
+|---------|---------------|----------------|
+| API key committed to public repo | MEDIUM | Revoke key immediately in Anthropic console; generate new key; add to Streamlit Cloud secrets; audit git history with `git log --all -S 'ANTHROPIC'` |
+| Cloud build fails (missing python-pptx/matplotlib) | LOW | Add missing packages to `requirements.txt`; push to GitHub; Streamlit Cloud auto-redeploys |
+| Download button loses bytes on rerun | LOW | Add `st.session_state` storage for `pptx_bytes`; 30-minute fix |
+| App sleeping when demo link is shared | LOW | Visit URL to wake; add GitHub Actions keep-alive for future; add sleep-note to portfolio page |
+| API 429 error during live demo | LOW | Add `anthropic.RateLimitError` handler with friendly message; add `@st.cache_data` on demo call |
+| Excel template download corrupted | LOW | Fix BytesIO `seek(0)` call and MIME type; redeploy |
+
+---
+
+## Pitfall-to-Phase Mapping
+
+### v1.0 Core Pipeline
+
+| Pitfall | Prevention Phase | Verification |
+|---------|------------------|--------------|
+| Formula cells return None | Excel parsing phase | All required rows non-null for demo data |
+| Merged cell misalignment | Excel parsing phase | Parser handles Apple financials without error |
+| Sign convention errors | Metric computation phase | EBITDA margin positive for Apple data |
+| Layout indices brittle | PowerPoint setup phase | `verify_template()` passes on all required layouts |
+| Waterfall chart absent from python-pptx | Chart generation phase | Waterfall renders correctly in output deck |
+| LLM returns generic text | LLM integration phase | All 12+ slide titles are insight-first |
+| JSON wrapped in code fences | LLM integration phase | Parser handles fence-wrapped and bare JSON |
+| BytesIO not reset | Streamlit UI phase | Downloaded PPTX is non-empty and valid |
+
+### v1.1 Portfolio Demo Features
+
+| Pitfall | Prevention Phase | Verification |
+|---------|------------------|--------------|
+| API key in public repo | Deployment phase (first task) | `git log --all --full-history -- .env` returns nothing; Cloud runs without local `.env` |
+| Download button loses bytes on rerun | UI Polish / Demo Landing phase | Download button persists after 3 clicks |
+| App sleeping when shared | Deployment phase (post-deploy) | Keep-alive Actions workflow running; app awake after 24h |
+| Dev deps in requirements.txt | Deployment phase (pre-deploy) | No pytest in Streamlit Cloud build log |
+| python-pptx / matplotlib missing | Deployment phase | End-to-end deck generation works on Cloud |
+| API called on every demo click | Demo Landing phase | Second demo click returns instantly (cached) |
+| File uploader buried | Demo Landing phase | Recruiter can initiate demo within 5s of page load |
+| Skills section lacks rationale | Skills Showcase phase | Each item has one-sentence decision rationale |
+| Template download corrupt | Data Template phase | Downloaded `.xlsx` opens without Excel repair prompt |
+
+---
+
+## Phase-Specific Warnings (v1.0)
 
 | Phase Topic | Likely Pitfall | Mitigation |
 |-------------|----------------|------------|
@@ -292,15 +631,23 @@ Mistakes that cause rewrites, broken output, or demo failures.
 
 ## Sources
 
-**Confidence note:** All findings in this document are based on training-data knowledge of:
-- `openpyxl` library documentation and known behaviors (data_only mode, merged cells, formula caching)
-- `python-pptx` library documentation and known limitations (chart type support, placeholder indexing, layout naming)
-- `matplotlib` embedding patterns in python-pptx (standard workaround for unsupported chart types)
-- Anthropic Claude API behavior (JSON wrapping, output token limits, prompt engineering for structured output)
-- Streamlit execution model (reactive reruns, UploadedFile type, session_state)
-
-**Overall confidence:** MEDIUM — these are well-established library behaviors that are stable across versions. The specific behaviors described (e.g., formula caching, waterfall chart absence, code fence wrapping) are consistent across multiple documented sources from training data. Validate against current official docs before treating any item as authoritative:
+### v1.0 Sources
+Training-data knowledge of openpyxl, python-pptx, matplotlib, anthropic SDK, Streamlit documented behaviors. MEDIUM confidence — validate against current official docs.
 - python-pptx: https://python-pptx.readthedocs.io/en/latest/
 - openpyxl: https://openpyxl.readthedocs.io/en/stable/
 - Anthropic API: https://docs.anthropic.com/
 - Streamlit: https://docs.streamlit.io/
+
+### v1.1 Sources (verified 2026-03-10)
+- [Streamlit Community Cloud — Status and Limitations](https://docs.streamlit.io/deploy/streamlit-community-cloud/status)
+- [Streamlit Community Cloud — Secrets Management](https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/secrets-management)
+- [Streamlit Community Cloud — App Dependencies](https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/app-dependencies)
+- [Streamlit — st.download_button docs](https://docs.streamlit.io/develop/api-reference/widgets/st.download_button)
+- [Streamlit — Button behavior and examples](https://docs.streamlit.io/develop/concepts/design/buttons)
+- [Streamlit blog — 8 tips for securely using API keys](https://blog.streamlit.io/8-tips-for-securely-using-api-keys/)
+- [Streamlit blog — Common app problems: Resource limits](https://blog.streamlit.io/common-app-problems-resource-limits/)
+- [Anthropic — API Key Best Practices](https://support.claude.com/en/articles/9767949-api-key-best-practices-keeping-your-keys-safe-and-secure)
+- [Anthropic — Rate limits](https://docs.anthropic.com/en/api/rate-limits)
+- [Streamlit community — Download button reloads app and results output is gone](https://discuss.streamlit.io/t/download-button-reloads-app-and-results-output-is-gone-and-need-to-re-run/51467)
+- [Streamlit community — App sleeping behavior](https://discuss.streamlit.io/t/how-to-prevent-the-app-enter-the-sleep-mode/87959)
+- [GitHub issue — st.download_button should not rerun entire page](https://github.com/streamlit/streamlit/issues/3832)

@@ -1,247 +1,215 @@
 # Project Research Summary
 
-**Project:** Autopitch
-**Domain:** Python financial PowerPoint automation — Excel three-statement input to Big 4-style deck with AI narrative
-**Researched:** 2026-03-09
-**Confidence:** MEDIUM-HIGH
+**Project:** Autopitch v1.1 — Portfolio Demo Polish
+**Domain:** Streamlit portfolio UI — demo experience, skills showcase, Cloud deployment
+**Researched:** 2026-03-10
+**Confidence:** HIGH
 
 ## Executive Summary
 
-Autopitch is a stateless, single-run CLI and web tool that transforms a structured Excel workbook (P&L, Balance Sheet, Cash Flow) into a professionally styled PowerPoint presentation with AI-generated insight-first narrative. The dominant pattern for this class of tool is a strict linear transformation pipeline: parse → validate → compute metrics → generate charts → generate narrative → assemble deck. The pipeline is invoked identically by both entry points (CLI and Streamlit), so all business logic lives in shared modules with neither interface containing any analytical code. This is the architecturally correct approach and the one portfolio reviewers will recognize as disciplined engineering.
+Autopitch v1.1 is a pure UI-layer enhancement to a fully working v1.0 pipeline. The goal is to transform a bare Streamlit file-uploader into a portfolio-ready live demo accessible to recruiters and interviewers who arrive without their own data. All research converges on the same architectural conclusion: the existing `autopitch/` package requires zero changes — every v1.1 feature is implemented in `app.py` and two new config files (`.streamlit/config.toml`, `.streamlit/secrets.toml`). No new Python packages are needed; all required UI capabilities already exist in the pinned Streamlit version (>=1.55.0).
 
-The recommended stack is deliberate and minimal: openpyxl + pandas for Excel ingestion, matplotlib for chart generation (embedded as BytesIO images — never via python-pptx's limited native chart API), python-pptx for deck assembly using a pre-built `.pptx` template, and the Anthropic SDK with a single structured Claude API call per deck run. The waterfall chart — the signature consulting visualization — requires a custom matplotlib stacked-bar implementation since neither python-pptx nor matplotlib natively support the type. The AI narrative layer must be engineered to produce insight-first consulting language, not descriptive data summaries; this requires explicit persona instructions and one-shot formatting examples in the system prompt.
+The recommended approach is a four-section UI restructure: hero landing with a one-click Apple demo, followed by an upload-your-own section with instructions and template download, then a skills/tech showcase at the bottom. The dependency chain is shallow — most tasks within the milestone are independent and can be parallelized — with one hard ordering constraint: Streamlit Community Cloud deployment must come last.
 
-The two most consequential risks are data quality and prompt quality. On the data side, openpyxl's formula cell behavior (returning None when caches are unpopulated) will silently corrupt the entire downstream pipeline if not caught at parse time with a hard validation gate. On the AI side, a prompt that lacks a clear consulting persona and structured output schema will produce generic prose that undermines the portfolio impression. Both risks are solvable at their respective phase boundaries with proper defensive design — they are not architectural problems.
-
----
+The primary risks are deployment-specific, not architectural. Three blockers must be resolved before the app goes live: `python-pptx` and `matplotlib` are confirmed missing from `requirements.txt` (guaranteed `ModuleNotFoundError` on Cloud at runtime), dev dependencies (`pytest`, `pytest-cov`) must be moved to a separate `requirements-dev.txt` to avoid build conflicts, and the GitHub repository has a push authentication issue (403 on tag push) that must be resolved before any Cloud deployment can proceed. Additionally, the `st.session_state` pattern must be implemented correctly to prevent generated deck bytes from disappearing when the download button is clicked — a well-documented Streamlit rerun gotcha that affects every app that produces downloadable artifacts.
 
 ## Key Findings
 
 ### Recommended Stack
 
-The stack is fully Python, with no compiled, browser, or Office-installation dependencies. Python 3.11 or 3.12 is required. openpyxl handles structural Excel reading (sheet discovery, cell-level validation, `data_only=True` is mandatory); pandas handles all metric computation via vectorized operations. Matplotlib renders charts to in-memory BytesIO PNG buffers at 150-200 DPI — this is the correct approach for pixel-perfect Big 4 styling and sidesteps all python-pptx native chart limitations. python-pptx v1.0 assembles the final deck, driven by a committed `.pptx` template file with named slide layouts. The Anthropic SDK makes a single Claude API call per deck run, receiving a structured JSON context and returning all slide narratives in one response. Streamlit provides the browser UI with negligible additional code. argparse (stdlib) handles the CLI.
+The v1.1 stack is the v1.0 stack with two new config files and zero new Python packages. Streamlit >= 1.55.0 already provides every UI primitive needed: `st.tabs`, `st.columns`, `st.badge` (added v1.55.0), `st.expander`, `st.download_button`, and `st.session_state`. The one non-trivial stack concern is secrets management: on Streamlit Community Cloud, `python-dotenv`'s `load_dotenv()` is a no-op because `.env` is gitignored and absent on Cloud. The API key must be injected via the Streamlit Cloud dashboard and accessed through `st.secrets`. Root-level TOML secrets are automatically promoted to `os.environ` at app startup, meaning `narrative.py` requires no code changes whatsoever.
 
-**Core technologies:**
-- `openpyxl ^3.1`: Excel structural parsing — pure-Python, no Excel installation required, `data_only=True` reads cached values not formulas
-- `pandas ^2.2`: Metric computation and DataFrame representation — `.pct_change()`, `.div()`, boolean masking cover all required KPIs
-- `matplotlib ^3.9`: Chart generation to BytesIO — full brand control, handles waterfall via stacked-bar, embeds cleanly in pptx via `add_picture()`
-- `python-pptx ^1.0`: Deck assembly — EMU-level positioning, named placeholder access, template-driven layout
-- `anthropic ^0.28` (verify): Claude API — single structured call per deck, JSON response, graceful fallback if key missing
-- `streamlit ^1.35`: Browser UI — file upload, spinner, `st.download_button()`, session_state for result caching
-- `python-dotenv ^1.0`: API key loading from `.env`
-- `pytest ^8.x` + `pytest-cov`: Test layer for metric computation (critical for portfolio credibility)
-- `black + ruff`: Formatting and linting (consulting codebases are visually clean)
+**Core technology additions (config files, not packages):**
+- `.streamlit/config.toml` — app theming (navy `primaryColor`, wide layout, sans-serif font) — config only, no code
+- `.streamlit/secrets.toml` — local API key mirror (gitignored) — enables `st.secrets` for local dev
 
-**Version note:** anthropic SDK and streamlit are actively versioned. Verify latest versions via PyPI before pinning. python-pptx v1.0 (2024) changed the API from 0.x — check migration notes.
+**Built-in Streamlit features to use (already in >= 1.55.0):**
+- `st.session_state` — mode tracking ("demo" / "upload" / None) and PPTX byte caching across reruns
+- `@st.cache_data` — memoize the demo pipeline call to prevent duplicate Claude API calls on button re-clicks
+- `st.badge` — tech skill tags per the official API added in v1.55.0
+- `st.tabs` / `st.columns` / `st.expander` — layout structure for hero, upload section, and skills showcase
+
+**Required `requirements.txt` corrections (confirmed blockers):**
+- Add `python-pptx>=1.0.0` — currently absent; Cloud build will fail at runtime without it
+- Add `matplotlib>=3.8.0` — currently absent; Cloud build will fail at runtime without it
+- Remove `pytest>=8.0.0` and `pytest-cov>=5.0.0` — move to new `requirements-dev.txt`
 
 ### Expected Features
 
-The feature set is anchored on standard Big 4 financial deck conventions for a three-statement analysis. See `FEATURES.md` for the full 15-slide deck structure.
+All v1.1 features are low-complexity UI composition on top of the existing `run_pipeline()` call. The feature research draws a sharp line between what a portfolio visitor requires (P1) and what is polish after the core is stable (P2).
 
-**Must have (table stakes):**
-- Title slide, executive summary/key takeaways slide, section divider slides — structural minimum for a credible deck
-- Revenue trend chart (bar, multi-year) — core financial narrative; every reviewer will look for this first
-- Gross/EBITDA/net margin trend (line chart) — required to demonstrate P&L coverage
-- Balance sheet snapshot and cash flow summary slides — validates three-statement coverage
-- Key metrics KPI scorecard — computed ratios (growth %, margins, current ratio, D/E, ROE, ROA)
-- Consistent Big 4 color theme (navy/teal/grey) across all slides — visual consistency is the first quality signal
-- Slide numbers and footer — consulting deck standard; missing = looks like a draft
-- CLI interface (`python generate.py input.xlsx`) — technical reviewers must be able to run it
-- Streamlit UI for upload and download — demonstrates engineering range
-- Demo Excel file with real public company data (Apple or Microsoft) — reviewers need to run it
-- Input validation with clear error messages — broken tools without good errors look unfinished
-- README with setup, usage, template format, architecture decisions
+**Must have (table stakes — P1):**
+- Hero / landing section — first impression; raw file uploader as opening element reads as unfinished
+- One-click Apple demo button — proof of output is the entire value proposition; visitors will not upload their own data first
+- Demo download button — completes the demo loop; a demo with no artifact proves nothing
+- Loading spinner during generation — 5-15s API call with no feedback reads as frozen app
+- In-app format instructions (accordion) — enables the upload-your-own path credibly
+- Downloadable Excel template — `apple_financials.xlsx` doubles as the template; removes format barrier
+- Tech stack / skills section with decision rationale — recruiter keyword signal; badge grid, not a raw list
+- `requirements.txt` corrected and Streamlit Cloud deployed with API key secret — the milestone is moot without a live URL
 
-**Should have (differentiators for Big 4 interviews):**
-- AI-generated insight-first slide titles ("Revenue grew 18% — Services mix shift the primary driver" not "Revenue Trend")
-- AI narrative bullets per section (2-3 per slide, consulting voice)
-- Waterfall chart for cash flow bridge — signature consulting chart type; most tools skip it
-- Anomaly/flag detection fed into AI prompt context ("Gross margin compressed 4pp YoY")
-- Structured `.pptx` template file with branded slide master
-- Dual-interface (CLI + Streamlit) from shared `run_pipeline()` core — demonstrates clean separation of concerns
+**Should have (polish — P2, add once core is stable on Cloud):**
+- Generation stats (elapsed time + slide count) — credibility detail grounded in observable evidence
+- Visual polish pass (`st.columns`, spacing, section headers, `config.toml` theming)
 
-**Defer (v2+):**
-- P&L waterfall bridge (slide 6) — high complexity; a grouped bar is an acceptable fallback
-- Anomaly detection rules — add after AI narrative baseline is working
-- Multi-company comparison, real-time data fetching, PDF export, batch processing, forecasting/projections, interactive dashboards, natural language query interface
+**Defer to v2+:**
+- Multi-company comparison — requires pipeline architecture change
+- PDF export — separate deliverable format
+- Real-time SEC / Yahoo Finance data ingestion — removes Excel dependency entirely
+- In-app slide preview (PPTX to image render) — heavy, fragile on Cloud free tier RAM
+
+**Do not build (anti-features):**
+- Always-on ping loop hack — against Streamlit fair-use intent; use GitHub Actions keep-alive cron instead
+- Per-slide progress bar — `run_pipeline()` is a single blocking call; faking progress is misleading
+- User accounts / saved decks — auth infrastructure out of scope; stateless is correct for a portfolio demo
 
 ### Architecture Approach
 
-The architecture is a linear pipeline with a single orchestrating function `run_pipeline(excel_path)` that all entry points call. The pipeline has five stages — Ingest, Compute, Charts (parallel with Narrative), Narrative, and Assemble — each represented by a dedicated module under a domain directory (`parser/`, `metrics/`, `charts/`, `narrative/`, `deck/`). Data contracts between stages are typed dataclasses (`FinancialData`, `MetricsBundle`, `ChartBundle`, `NarrativeBundle`). Charts are passed as BytesIO buffers (no intermediate disk I/O). The Claude API call happens after metrics are computed and before deck assembly; the narrative module returns a fallback stub if the API key is absent so the pipeline never hard-blocks on AI availability. See `ARCHITECTURE.md` for the full module directory structure and data flow diagram.
+v1.1 is an `app.py` expansion from 38 lines to approximately 150 lines. The `autopitch/` package is entirely untouched. The architecture follows three explicit patterns established in ARCHITECTURE.md: (1) mode-gated session state (`"demo"` / `"upload"` / `None`) to track UI context and cache generated bytes across reruns, (2) BytesIO pass-through for the demo file so no disk writes occur on Cloud, and (3) root-level secrets-as-env-vars so `narrative.py` reads `os.environ["ANTHROPIC_API_KEY"]` identically in both local and Cloud environments without any code change.
 
 **Major components:**
-1. `pipeline.py` (Orchestrator) — the only module both entry points import; sequences all stages; `run_pipeline(excel_path: Path) -> Path`
-2. `parser/` (Ingest + Validate) — reads Excel with openpyxl, validates sheet structure and data quality, returns `FinancialData` dataclass
-3. `metrics/` (Compute) — all KPI calculations from `FinancialData`; returns `MetricsBundle` dataclass; every downstream stage depends on this
-4. `charts/` (Visualization) — matplotlib figures to BytesIO; single `CHART_STYLE` dict for brand consistency; returns `ChartBundle`
-5. `narrative/` (AI) — single Claude API call with serialized `MetricsBundle`; parses JSON response; returns `NarrativeBundle` with fallback
-6. `deck/` (Assembly) — opens `template.pptx`, places charts + narrative + KPIs onto named placeholders, writes output `.pptx`
-7. `generate.py` / `app.py` (Entry Points) — thin wrappers; neither contains business logic
+
+1. `app.py` (modified — 38 → ~150 lines) — four-section UI: hero with one-click demo, upload path with instructions, template download, skills showcase; session state orchestration
+2. `.streamlit/config.toml` (new) — theming: navy `primaryColor = "#1B3A6B"`, wide layout, sans-serif font; committed to repo
+3. `.streamlit/secrets.toml` (new, gitignored) — local API key mirror; Cloud uses dashboard settings panel
+4. `autopitch/` package — unchanged; `run_pipeline(source: Union[str, Path, BinaryIO]) -> bytes` is the only integration point
+5. `requirements.txt` (corrected) — add `python-pptx`, `matplotlib`; remove `pytest`, `pytest-cov`
+6. `requirements-dev.txt` (new) — `-r requirements.txt` plus `pytest`, `pytest-cov`
+7. GitHub Actions keep-alive workflow (new) — GET request to app URL every 6 hours to prevent Cloud hibernation
+
+**Suggested build order within v1.1:**
+
+```
+Task 1: Fix requirements.txt and create requirements-dev.txt — deployment blocker, do first
+Task 2: Secrets config (.streamlit/secrets.toml + .gitignore entry) — prerequisite for local testing
+Task 3: app.py hero section + one-click demo with session state wiring
+Task 4: app.py upload section + template download + format instructions accordion
+Task 5: app.py skills showcase section (st.columns badge grid with rationale)
+Task 6: Polish pass (config.toml theming, spacing, copy review, local end-to-end test)
+Task 7: Cloud deployment (fix GitHub auth, push, deploy, configure secrets, keep-alive workflow)
+```
 
 ### Critical Pitfalls
 
-1. **Formula cells return None** — openpyxl reads formula results from Excel's cached value store. If the file was never opened and saved in Excel, all formula cells return `None`. Prevention: always use `data_only=True`; add a hard validation gate after parse that checks all required line items are non-null before continuing. This must be solved in Phase 1 or everything downstream is corrupted.
+**v1.1 deployment blockers (address in Phase 1, before anything else):**
 
-2. **python-pptx placeholder indices are positional, not named** — hardcoded layout indices and placeholder indices break when the template file changes. Prevention: look up layouts by name (`next(l for l in prs.slide_layouts if l.name == "...")`), access placeholders by `idx` constant (not list position), write a `verify_template()` function that validates the template at startup.
+1. **`python-pptx` and `matplotlib` missing from `requirements.txt`** — confirmed absent in the current file. Streamlit Cloud will install only what is listed; both packages are imported at runtime. Add both before the first deployment attempt or the app will `ModuleNotFoundError` immediately on deck generation.
 
-3. **Matplotlib charts embedded at low DPI appear blurry** — default matplotlib DPI (100) looks fine on screen but blurs on a projected presentation. Prevention: save all charts at 150-200 DPI (`fig.savefig(buf, dpi=150, bbox_inches='tight')`), use `Inches()` and `prs.slide_width` for EMU-correct sizing.
+2. **API key committed to public repo** — GitHub secret scanning auto-revokes Anthropic keys within minutes of exposure. Verify `.gitignore` covers both `.env` and `.streamlit/secrets.toml` before making the repo public. Set `ANTHROPIC_API_KEY` only through the Streamlit Cloud dashboard — never in any file that enters version control.
 
-4. **LLM prompt produces generic text instead of consulting language** — without explicit instruction, Claude defaults to descriptive reporting ("Revenue was $X") not insight-first analysis ("Revenue grew 15% — cloud mix shift the primary driver"). Prevention: system prompt must specify the consulting persona, require insight-first titles, include a one-shot formatting example, and request structured JSON output (title + bullets array per slide).
+3. **Download button loses generated bytes on rerun** — clicking `st.download_button` triggers a full Streamlit script rerun. `pptx_bytes` defined inside `if st.button("Generate"):` goes out of scope and the download button disappears. Fix: store in `st.session_state["pptx_bytes"]` immediately after generation; render the download button unconditionally from state on every rerun.
 
-5. **Streamlit UploadedFile is not a filesystem path** — `st.file_uploader()` returns a BytesIO-like object, not a path string. Passing it to `openpyxl.load_workbook(path)` fails with a type error. Prevention: core parser must accept `Union[str, BinaryIO]`; store generated PPTX bytes in `st.session_state` to survive reruns; gate generation behind a button click to prevent multiple LLM calls.
+4. **Dev dependencies in `requirements.txt` cause Cloud build conflicts** — `pytest` and `pytest-cov` must be split to `requirements-dev.txt` before deployment. Single requirements file for dev+prod is never acceptable for a deployed app.
 
----
+5. **App hibernation makes the demo invisible to portfolio visitors** — Streamlit Community Cloud sleeps apps after ~12h of no traffic; cold-start wake takes 20-30 seconds. A recruiter who sees the sleep page often clicks away. Add a GitHub Actions keep-alive cron before sharing the live URL. Add a "may take ~30s to wake if inactive" note to the portfolio page.
+
+**v1.1 moderate pitfalls (address during Phase 2):**
+
+6. **One-click demo calls Claude API on every button press** — wrap the demo pipeline call in `@st.cache_data` keyed on the demo file bytes; returns cached PPTX on subsequent clicks within the session. Also catch `anthropic.RateLimitError` with a user-friendly message rather than a raw traceback.
+
+7. **Skills showcase reads as resume padding without rationale** — a badge wall of library names provides zero signal to technical reviewers. Limit to 5-6 technologies, each with one sentence explaining the architectural decision made and why. Link each item to the relevant source file.
+
+8. **File uploader shown before demo** — `st.file_uploader` as the first visible element gates the tool behind a prerequisite most visitors cannot fulfill. Hero section and demo button must be visible above the fold without scrolling.
+
+9. **Excel template download returns corrupt file** — correct MIME type is `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`; file must be opened in binary mode (`"rb"`); BytesIO buffer must have `seek(0)` called after write before `.getvalue()`. Test downloaded file opens without Excel repair prompt.
 
 ## Implications for Roadmap
 
-Based on the dependency structure in ARCHITECTURE.md and the feature priorities in FEATURES.md, the pipeline's hard dependencies directly dictate phase ordering. Nothing works without parsed, validated financial data. Charts and narrative both depend on computed metrics but are independent of each other. Deck assembly is the integration point. Entry points are a thin wrapper on top of a completed pipeline.
+Based on the pitfall-to-phase mapping in PITFALLS.md and the dependency graph in ARCHITECTURE.md, a three-phase structure is recommended. The key structural insight: deployment-blocking issues must be resolved before UI work, because every feature built before fixing the requirements file is unverifiable on Cloud.
 
-### Phase 1: Excel Ingestion and Validation Foundation
+### Phase 1: Deployment Foundation
 
-**Rationale:** `FinancialData` is the root dataclass that every other phase depends on. There is no parallelism possible until this stage exists. The formula-cell pitfall (Pitfall 1) and merged-cell pitfall (Pitfall 7) are both Phase 1 concerns that will corrupt all downstream work if unresolved here.
+**Rationale:** Two confirmed blockers exist right now — missing packages in `requirements.txt` and GitHub push authentication failure. Neither is a UI problem; both will silently prevent the entire milestone from going live. Resolving them first means every subsequent task can be validated incrementally on Cloud rather than discovering a broken deploy at the end. This phase also handles all security setup: secrets gitignore configuration and repo public/private decision.
 
-**Delivers:** `parser/ingest.py`, `parser/validate.py`, `parser/models.py` (FinancialData), `data/demo.xlsx`, input template documentation, comprehensive validation error messages
+**Delivers:** Corrected `requirements.txt`, new `requirements-dev.txt`, `.streamlit/secrets.toml` with `.gitignore` entry, GitHub auth restored, first successful Cloud deployment (bare UI acceptable at this stage), API key configured in Cloud dashboard.
 
-**Addresses features:** Excel parsing with validation, demo data file, documented input template schema, CLI foundation via argparse
+**Addresses features:** Table stakes item "live deployed URL"; `requirements.txt` accuracy requirement.
 
-**Avoids pitfalls:** Formula cells returning None (use `data_only=True` + validation gate), merged cell misalignment (detect/prohibit in template), row label naming variations (LABEL_ALIASES dict + fuzzy matching), sign convention errors (assert positive revenue)
+**Avoids pitfalls:** #21 (python-pptx/matplotlib missing), #20 (dev deps in requirements.txt), #17 (API key committed to repo). All three are confirmed present risks that will cause guaranteed failures if not addressed before Phase 2 begins.
 
-**Research flag:** Standard — openpyxl parsing patterns are well-documented. No phase research needed.
+### Phase 2: Demo-First UI
 
----
+**Rationale:** Once the app is deployable, the complete UI restructure can be built and verified on Cloud with each commit. Session state must be established as the first sub-task because `pptx_bytes` persistence is the load-bearing pattern that every button in the demo and upload sections depends on. The four sections of `app.py` are otherwise largely independent and can be built in any order once session state is wired.
 
-### Phase 2: Metrics Engine
+**Delivers:** Complete four-section `app.py`: hero with one-click Apple demo and download button, upload section with in-app format instructions accordion and Excel template download, skills showcase with rationale-first badge grid. This is the full portfolio-visible surface area.
 
-**Rationale:** `MetricsBundle` is the second dependency that all downstream stages (charts AND narrative) require. This phase is pure pandas computation — the most testable and well-defined phase. Unit tests for known financial values belong here and directly support portfolio credibility.
+**Uses:** `st.session_state`, `st.tabs`, `st.columns`, `st.badge`, `st.expander`, `st.download_button`, `@st.cache_data`, `BytesIO` pass-through, `Path(__file__).parent / "demo" / ...` for Cloud-safe file resolution.
 
-**Delivers:** `metrics/compute.py`, `metrics/models.py` (MetricsBundle), pytest unit tests for all 9+ KPIs with known-value assertions
+**Avoids pitfalls:** #18 (download button loses bytes — session state), #22 (API called on every click — cache_data), #23 (skills section as padding — rationale-first), #24 (file uploader buried — hero first), #25 (template download corrupt — correct MIME type and binary mode).
 
-**Addresses features:** Revenue growth %, gross/EBITDA/net margins, current ratio, D/E, working capital, cash conversion, ROE, ROA
+### Phase 3: Polish and Keep-Alive
 
-**Avoids pitfalls:** Sign convention errors in EBITDA margin (compute from Operating Income + D&A), test-verified metric correctness
+**Rationale:** Visual polish and the keep-alive mechanism are deliberately last. Polishing layout before structure is locked wastes time if sections move. The keep-alive workflow has no value until a live URL exists and the portfolio link is ready to share.
 
-**Research flag:** Standard — pandas arithmetic is well-documented. No phase research needed.
+**Delivers:** `.streamlit/config.toml` theming (navy palette, wide layout), generation stats (elapsed time + slide count), column widths and spacing cleanup, GitHub Actions cron keep-alive workflow that pings the app URL every 6 hours.
 
----
+**Uses:** `.streamlit/config.toml`, `time.time()` wrapper around `run_pipeline()` call, GitHub Actions workflow YAML (cron schedule, HTTP GET to app URL).
 
-### Phase 3: Chart Generation
-
-**Rationale:** Charts are the primary visual output that interviewers screenshot. They depend on MetricsBundle (Phase 2) and must be complete before deck assembly. The waterfall chart implementation (matplotlib stacked-bar technique) is the highest-complexity chart and should be built here so a late-stage refactor is not needed.
-
-**Delivers:** `charts/generate.py`, `charts/style.py` (single CHART_STYLE dict with brand constants), all chart types: clustered bar, line overlay, stacked bar, waterfall
-
-**Addresses features:** Revenue trend chart, margin trend charts, balance sheet composition chart, cash flow waterfall, FCF bridge
-
-**Avoids pitfalls:** Blurry charts (150+ DPI, BytesIO, bbox_inches='tight'), waterfall not in python-pptx (matplotlib stacked-bar from day one), inconsistent brand colors (single rcParams-applied CHART_STYLE)
-
-**Research flag:** Standard for bar/line charts. Waterfall stacked-bar technique is a known pattern — no additional research needed, but implementation requires careful testing.
-
----
-
-### Phase 4: Deck Assembly and Template
-
-**Rationale:** Assembly integrates ChartBundle and (at this phase) placeholder narrative. Building the layout with stub text first proves the template geometry before the Claude integration adds a variable. The template `.pptx` file is created here and committed — never modified casually after this point.
-
-**Delivers:** `deck/template.pptx` (Big 4 branded master with named layouts and placeholders), `deck/assemble.py`, `deck/slide_defs.py`, `verify_template()` validation function, complete 12-15 slide deck rendering with placeholder narrative
-
-**Addresses features:** All slide types (title, exec summary, section dividers, content slides, scorecard, appendix), consistent color theme, slide numbers and footer, slide master
-
-**Avoids pitfalls:** Layout index brittleness (name-based lookup + verify_template()), font embedding issues (use Calibri/Arial), chart sizing (EMU-correct positioning using Inches() and prs.slide_width)
-
-**Research flag:** Standard — python-pptx assembly patterns are well-documented. Verify python-pptx v1.0 placeholder API in official docs before coding.
-
----
-
-### Phase 5: AI Narrative Integration
-
-**Rationale:** Claude integration is slotted into the already-verified deck structure from Phase 4. The prompt engineering is the creative and technically risky work; building it after the deck structure is proven means failures are isolated to the narrative module only. Graceful fallback (placeholder text on API error) must be implemented here.
-
-**Delivers:** `narrative/claude.py`, `narrative/models.py` (NarrativeBundle), system prompt with consulting persona and one-shot example, JSON output schema, fallback stub behavior, LLM response validator
-
-**Addresses features:** AI-generated insight-first slide titles, AI narrative bullets (consulting voice), anomaly flag detection passed as prompt context
-
-**Avoids pitfalls:** Generic non-consulting language (explicit persona + insight-first instruction + one-shot example), JSON wrapped in code fences (strip markdown fences before json.loads()), token limits (concise output schema: title + 2-3 bullets ≤ 15 words each), slide count mismatch (validate response completeness; pad with placeholder if below minimum)
-
-**Research flag:** Needs attention — verify current claude-sonnet model ID (may have changed since research cutoff August 2025), check latest anthropic SDK version and token counting API. Prompt iteration will require test runs against demo data.
-
----
-
-### Phase 6: Entry Points, Pipeline Wire-Up, and Polish
-
-**Rationale:** Entry points are thin wrappers that call `run_pipeline()`. Building them last means the core pipeline is fully verified before exposing it to UI concerns. The Streamlit-specific pitfalls (UploadedFile type, BytesIO reset, session_state caching) are isolated here and not allowed to pollute core modules.
-
-**Delivers:** `pipeline.py` (orchestrator), `generate.py` (CLI), `app.py` (Streamlit UI with spinner, button-gated generation, session_state caching), README with setup/usage/template format/architecture decisions, end-to-end integration test against demo.xlsx
-
-**Addresses features:** CLI interface, Streamlit web UI, README documentation, full pipeline integration
-
-**Avoids pitfalls:** UploadedFile is not a path (parser accepts Union[str, BinaryIO]), BytesIO not reset before download (buf.seek(0) after prs.save()), multiple LLM calls on rerun (button-gated, session_state cache), temp file disappears mid-processing (never write intermediate temp files; pass BytesIO throughout)
-
-**Research flag:** Standard for CLI. Streamlit patterns are well-documented. Verify st.download_button signature against current Streamlit docs (actively versioned).
-
----
+**Avoids pitfall:** #19 (app sleeping when portfolio link is shared). This phase must complete before the live URL is publicized.
 
 ### Phase Ordering Rationale
 
-- **Dependency chain drives order**: FinancialData (Phase 1) → MetricsBundle (Phase 2) → ChartBundle (Phase 3) and NarrativeBundle (Phase 5) → Deck assembly (Phase 4) → Entry points (Phase 6). This is not arbitrary — skipping any phase breaks the next.
-- **Charts before narrative in deck**: Phase 4 builds the deck shell with placeholder text so layout geometry is proven before the Claude API is integrated. This isolates prompt engineering failures from layout failures.
-- **AI late in pipeline**: Narrative depends only on MetricsBundle, not on charts. Placing it in Phase 5 means API costs are only incurred when the rest of the pipeline is verified working.
-- **Entry points last**: No business logic belongs in entry points. Building them last enforces this constraint and prevents logic leaking into UI layers.
-- **Tests accompany each phase**: Metric unit tests in Phase 2, chart visual inspection in Phase 3, template verification function in Phase 4, LLM response validation in Phase 5.
+- **Deployment before UI:** The two missing packages in `requirements.txt` are a confirmed hard failure. Every feature built before fixing this is unverifiable on Cloud. Resolve blockers first, then build on a verified foundation.
+- **Session state before demo flow:** `st.session_state["pptx_bytes"]` persistence is the pattern every button in the demo and upload sections depends on. Establishing it as the first sub-task in Phase 2 prevents retrofitting it into all subsequent sub-tasks.
+- **Keep-alive and polish last:** Both require a live URL (keep-alive) or locked structure (polish). Building them earlier wastes effort.
+- **Uniform shallow dependency depth:** Unlike v1.0 (which had a strict linear pipeline dependency chain), v1.1's tasks are mostly parallel within each phase. The phase boundaries reflect deployment readiness checkpoints, not data dependency constraints.
 
 ### Research Flags
 
-Phases likely needing deeper research or verification during planning:
-- **Phase 5 (AI Narrative):** Verify current claude-sonnet model ID and anthropic SDK version before coding. Prompt engineering for consulting voice will require iteration against real data. Check SDK's structured output / tool-use feature as an alternative to regex-based JSON fence stripping.
-- **Phase 4 (Deck Assembly):** Verify python-pptx v1.0 API migration notes — v1.0 was released in 2024 and may have changed from 0.x patterns documented in most training examples.
+Phases with standard, well-documented patterns — no `/gsd:research-phase` needed during planning:
 
-Phases with standard, well-documented patterns (skip research-phase):
-- **Phase 1 (Excel Parsing):** openpyxl patterns are stable and extensively documented.
-- **Phase 2 (Metrics):** pandas arithmetic is foundational and well-documented.
-- **Phase 3 (Charts):** matplotlib-to-BytesIO embedding is a standard pattern; waterfall stacked-bar technique is known.
-- **Phase 6 (Entry Points):** argparse is stdlib; Streamlit file upload/download patterns are well-documented.
+- **Phase 1 (Deployment Foundation):** All steps (requirements.txt correction, .gitignore, .streamlit/secrets.toml, Cloud deployment process) are covered verbatim with code examples in STACK.md and PITFALLS.md. Official Streamlit docs verified.
+- **Phase 2 (Demo-First UI):** Session state patterns, BytesIO flow, `@st.cache_data` usage, all widget APIs, and complete code sketches for every data flow are provided in ARCHITECTURE.md. No unknowns remain.
+- **Phase 3 (Polish and Keep-Alive):** Streamlit config.toml theming and GitHub Actions cron are standard, extensively documented patterns. No research gap.
 
----
+No phases require deeper research during planning. All research was resolved at the project-level stage with official documentation.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | MEDIUM-HIGH | Core libraries (openpyxl, pandas, matplotlib, argparse) are HIGH confidence — stable, dominant. python-pptx v1.0 API is MEDIUM — released 2024, verify migration from 0.x. anthropic SDK is LOW-MEDIUM — actively versioned, verify before pinning. |
-| Features | HIGH | Big 4 deck conventions and financial metric definitions are stable domain knowledge. Portfolio signal for Big 4 interviews is MEDIUM — based on published JDs and interview prep content, not verified against 2026 hiring criteria. |
-| Architecture | HIGH | Linear pipeline pattern is the established approach for this class of tool. All official library docs (python-pptx, Streamlit, Anthropic, pandas, matplotlib) confirm the integration patterns described. |
-| Pitfalls | MEDIUM | Well-established library behaviors (openpyxl formula caching, python-pptx placeholder indexing, Streamlit rerun model, Claude JSON wrapping). All are consistent with multiple documented sources. Validate against current official docs before treating as authoritative. |
+| Stack | HIGH | Zero new packages needed. All capabilities in Streamlit >= 1.55.0 which is already pinned. Official docs verified for every listed feature. |
+| Features | HIGH (Streamlit behavior) / MEDIUM (UX conventions) | Streamlit Cloud behavior (sleep, secrets, requirements.txt) verified against official docs. Hero-first, demo-first UX conventions are community-supported but not from a single authoritative source — acceptable risk given the low-stakes nature of the decision. |
+| Architecture | HIGH | Existing codebase directly inspected. `run_pipeline()` and `parse_workbook()` signatures confirmed. Session state patterns and BytesIO pass-through are standard, well-documented Streamlit practices with code examples in the official docs. |
+| Pitfalls | HIGH (v1.1) | v1.1 pitfalls verified against official Streamlit and Anthropic docs. The two missing packages (python-pptx, matplotlib) are confirmed by direct inspection of the current `requirements.txt`. |
 
-**Overall confidence:** MEDIUM-HIGH
+**Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **anthropic SDK version and model ID**: Training data cutoff August 2025; a newer claude-sonnet model may be available as of March 2026. Verify the exact current model ID and SDK version before Phase 5 coding. Run `pip index versions anthropic` and check the Anthropic documentation for current model names.
-- **python-pptx v1.0 migration**: v1.0 was released in 2024 and the API changed from 0.x. Before Phase 4, read the official migration notes at python-pptx.readthedocs.io to identify any breaking changes in placeholder access or presentation initialization.
-- **Waterfall chart implementation**: The stacked-bar waterfall technique is described but not prototyped. Allocate time in Phase 3 for implementation iteration — this is the highest-complexity chart and should not be left to the end of that phase.
-- **Competitive tool landscape**: Beautiful.ai, Gamma.app, Tome, and similar AI deck tools were not verifiably surveyed (web search unavailable). The differentiator positioning is based on Big 4 consulting conventions, not confirmed competitive gap analysis.
-- **Demo data selection**: Apple or Microsoft annual report data is recommended but the specific year range (e.g., FY2021-FY2025) and exact line item labels need to be confirmed before the demo Excel file is built, since the parser's LABEL_ALIASES must match whatever label conventions the chosen data source uses.
+- **GitHub push authentication (403 error):** The MEMORY.md notes that `git push` for the v1.0 tag failed with a 403 permission denied error. This is the only external blocker not fully resolved by research. Resolution: re-authenticate via `gh auth login` or regenerate a personal access token before Phase 1 deployment work begins. This must be resolved before any Cloud deployment task can be attempted.
 
----
+- **Python version on Streamlit Cloud:** The STACK.md research noted that Community Cloud now defaults to Python 3.13 (one community forum source, MEDIUM confidence). The project targets Python 3.11+. Python 3.11 must be selected explicitly in the deploy dialog's Advanced Settings during the first deployment — it cannot be changed after deployment without deleting and redeploying the app. Confirm this during Phase 1.
+
+- **matplotlib figure memory leak on Cloud:** PITFALLS.md identifies that `plt.close('all')` must be called after each chart is saved to BytesIO to prevent memory growth across repeated deck generations in one session. The existing `charts.py` should be audited for this one-liner. Minor risk given low traffic of a portfolio demo, but worth a one-line verification before Cloud deployment.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- Official python-pptx documentation: https://python-pptx.readthedocs.io/
-- Official Streamlit documentation: https://docs.streamlit.io/
-- Official Anthropic API documentation: https://docs.anthropic.com/
-- Official pandas documentation: https://pandas.pydata.org/docs/
-- Official matplotlib documentation: https://matplotlib.org/stable/
+- [Streamlit Community Cloud — App dependencies](https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/app-dependencies) — requirements.txt behavior, Python version selection
+- [Streamlit Community Cloud — Secrets management](https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/secrets-management) — secrets.toml format, dashboard upload, env var injection
+- [Streamlit secrets concepts](https://docs.streamlit.io/develop/concepts/connections/secrets-management) — st.secrets as env vars, dotenv coexistence
+- [st.badge API reference](https://docs.streamlit.io/develop/api-reference/text/st.badge) — version introduced (v1.55.0), parameters
+- [Streamlit theming: colors and borders](https://docs.streamlit.io/develop/concepts/configuration/theming-customize-colors-and-borders) — config.toml options
+- [Streamlit Community Cloud — Status and Limitations](https://docs.streamlit.io/deploy/streamlit-community-cloud/status) — sleep behavior, free tier constraints
+- [st.download_button docs](https://docs.streamlit.io/develop/api-reference/widgets/st.download_button) — binary file handling, MIME types
+- [Streamlit — Button behavior and examples](https://docs.streamlit.io/develop/concepts/design/buttons) — rerun behavior, state patterns
+- [Streamlit — Serving static files](https://docs.streamlit.io/develop/concepts/configuration/serving-static-files) — confirmed XLSX not suitable for static serving (Content-Type: text/plain)
+- [Streamlit blog — 8 tips for securely using API keys](https://blog.streamlit.io/8-tips-for-securely-using-api-keys/) — key security best practices
+- [Anthropic — API Key Best Practices](https://support.claude.com/en/articles/9767949-api-key-best-practices-keeping-your-keys-safe-and-secure) — key exposure risk
+- [Anthropic — Rate limits](https://docs.anthropic.com/en/api/rate-limits) — 429 behavior
+- Existing codebase directly inspected: `app.py`, `autopitch/pipeline.py`, `autopitch/narrative.py`, `requirements.txt`
 
 ### Secondary (MEDIUM confidence)
-- Training data: Big 4 consulting deck conventions (Deloitte, McKinsey, PwC publicly available frameworks)
-- Training data: Financial analysis curriculum (CFA, MBA) for metric definitions and sign conventions
-- Training data: openpyxl documented behaviors (data_only mode, merged cells, formula caching) — validate against https://openpyxl.readthedocs.io/en/stable/
-- Training data: Consulting interview prep content for portfolio project evaluation criteria
+- [Streamlit community — Python 3.13 default on Cloud](https://discuss.streamlit.io/t/streamlit-cloud-using-python-3-13-despite-runtime-txt-specifying-3-11/113759) — Python version default (community post, not official docs)
+- [Streamlit community — Download button loses result output](https://discuss.streamlit.io/t/download-button-reloads-app-and-results-output-is-gone-and-need-to-re-run/51467) — session state fix corroboration
+- [Streamlit community — App sleeping behavior](https://discuss.streamlit.io/t/how-to-prevent-the-app-enter-the-sleep-mode/87959) — sleep duration and keep-alive approaches
+- [Portfolio UX patterns (WeAreDevelopers March 2025)](https://www.wearedevelopers.com/en/magazine/561/web-developer-portfolio-inspiration-and-examples-march-2025-561) — hero-first, demo-first conventions
+- [Streamlit blog — Common app problems: Resource limits](https://blog.streamlit.io/common-app-problems-resource-limits/) — matplotlib memory and Cloud RAM constraints
 
 ### Tertiary (LOW confidence)
-- Competitive tool landscape (Beautiful.ai, Gamma.app, Tome) — web search unavailable; feature comparison not verified against current 2026 state
-- Portfolio signal for Big 4 tech consulting interviews — based on published job descriptions from training data, not verified against 2026 hiring criteria
+- [Building a Portfolio with Streamlit (Medium)](https://medium.com/data-science-in-your-pocket/building-portfolio-using-streamlit-ac215b8e74da) — structural patterns, single source
 
 ---
-*Research completed: 2026-03-09*
+*Research completed: 2026-03-10*
 *Ready for roadmap: yes*
