@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Portfolio Demo Polish
 status: planning
-stopped_at: Completed 06-02-PLAN.md
-last_updated: "2026-03-11T01:59:13.989Z"
+stopped_at: Completed 07-01-PLAN.md
+last_updated: "2026-03-11T02:16:11.322Z"
 last_activity: 2026-03-11 — Deployed to Streamlit Cloud; end-to-end generation verified at public URL
 progress:
   total_phases: 3
-  completed_phases: 2
-  total_plans: 4
-  completed_plans: 4
+  completed_phases: 3
+  total_plans: 6
+  completed_plans: 6
 ---
 
 ---
@@ -64,6 +64,8 @@ Progress: [██████████] 100% (Phase 05 complete)
 | Phase 05-deployment-foundation P01 | 4min | 2 tasks | 6 files |
 | Phase 06-demo-first-ui P01 | 7min | 2 tasks | 2 files |
 | Phase 06-demo-first-ui P02 | 8min | 2 tasks | 1 files |
+| Phase 07-polish-and-keep-alive P02 | 2min | 2 tasks | 2 files |
+| Phase 07-polish-and-keep-alive P01 | 8min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -83,6 +85,11 @@ Recent v1.1 decisions:
 - [Phase 06-demo-first-ui]: Download buttons rendered outside if-button blocks based on session_state — persists across all reruns
 - [Phase 06-demo-first-ui]: Slide count hardcoded as 11 in session state — avoids PPTX re-parse; deck always produces exactly 11 slides
 - [Phase 06-demo-first-ui]: Plan 01 pre-implemented upload section and tech stack — Plan 02 was tests-only
+- [Phase 07-polish-and-keep-alive]: Plain string matching for keep-alive workflow tests — no YAML parsing needed for structural checks; simpler and dependency-free
+- [Phase 07-polish-and-keep-alive]: keepalive-workflow time_elapsed:45 days — fires before 60-day auto-disable with 15-day buffer
+- [Phase 07-polish-and-keep-alive]: workflow_dispatch in keep-alive.yml — enables immediate manual verification after push without waiting for cron
+- [Phase 07-polish-and-keep-alive]: Navy palette via .streamlit/config.toml [theme] — no custom CSS injection; layout='wide' stays in st.set_page_config() only
+- [Phase 07-polish-and-keep-alive]: Upload section promoted from st.subheader to st.header for consistent top-level section hierarchy
 
 ### Pending Todos
 
@@ -94,6 +101,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-11T01:33:49.255Z
-Stopped at: Completed 06-02-PLAN.md
+Last session: 2026-03-11T02:16:11.319Z
+Stopped at: Completed 07-01-PLAN.md
 Resume file: None

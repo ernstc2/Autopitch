@@ -12,7 +12,7 @@ Requirements for Portfolio Demo Polish milestone. Each maps to roadmap phases.
 - [x] **DEPL-01**: App has correct `requirements.txt` with all runtime dependencies (python-pptx, matplotlib) and dev deps split to `requirements-dev.txt`
 - [x] **DEPL-02**: Secrets management configured — `.streamlit/secrets.toml` gitignored, API key injected via Streamlit Cloud dashboard
 - [x] **DEPL-03**: App deployed and running on Streamlit Community Cloud with working Claude narrative generation
-- [ ] **DEPL-04**: GitHub Actions keep-alive cron pings app every 6h to prevent hibernation
+- [x] **DEPL-04**: GitHub Actions keep-alive cron pings app every 6h to prevent hibernation
 
 ### Demo Experience
 
@@ -33,8 +33,8 @@ Requirements for Portfolio Demo Polish milestone. Each maps to roadmap phases.
 
 ### Visual Polish
 
-- [ ] **VISL-01**: Streamlit theme configured via `.streamlit/config.toml` (navy palette, wide layout, sans-serif font)
-- [ ] **VISL-02**: Polished layout with proper column widths, spacing, section headers, and copy
+- [x] **VISL-01**: Streamlit theme configured via `.streamlit/config.toml` (navy palette, wide layout, sans-serif font)
+- [x] **VISL-02**: Polished layout with proper column widths, spacing, section headers, and copy
 
 ## v2 Requirements
 
@@ -65,7 +65,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DEPL-01 | Phase 5 | Complete |
 | DEPL-02 | Phase 5 | Complete |
 | DEPL-03 | Phase 5 | Complete |
-| DEPL-04 | Phase 7 | Pending |
+| DEPL-04 | Phase 7 | Complete |
 | DEMO-01 | Phase 6 | Complete |
 | DEMO-02 | Phase 6 | Complete |
 | DEMO-03 | Phase 6 | Complete |
@@ -74,8 +74,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | UPLD-02 | Phase 6 | Complete |
 | UPLD-03 | Phase 6 | Complete |
 | SKIL-01 | Phase 6 | Complete |
-| VISL-01 | Phase 7 | Pending |
-| VISL-02 | Phase 7 | Pending |
+| VISL-01 | Phase 7 | Complete |
+| VISL-02 | Phase 7 | Complete |
 
 **Coverage:**
 - v1.1 requirements: 14 total
