@@ -2,7 +2,7 @@
 
 ## What This Is
 
-Autopitch is a Python tool that transforms raw financial data from a standard Excel workbook (P&L, Balance Sheet, Cash Flow) into a polished, consulting-style PowerPoint deck — complete with Big 4-aesthetic charts, computed financial metrics, and Claude-generated insight-first narrative commentary. Built as a portfolio project targeting Big 4 tech consulting applications.
+Autopitch is a Python tool that transforms raw financial data from a standard Excel workbook (P&L, Balance Sheet, Cash Flow) into a polished, consulting-style PowerPoint deck — complete with Big 4-aesthetic charts, computed financial metrics, and Claude-generated insight-first narrative commentary. Deployed as a live portfolio demo on Streamlit Cloud with a dark navy UI, one-click demo, and guided upload experience.
 
 ## Core Value
 
@@ -22,51 +22,64 @@ A user uploads one Excel file and gets back a boardroom-ready consulting deck in
 - ✓ Expose a Streamlit web UI for browser-based upload and download — v1.0
 - ✓ Include a demo Excel file using real public company financials (Apple) — v1.0
 - ✓ README documents setup, usage, and design decisions for portfolio reviewers — v1.0
+- ✓ Demo-first landing experience for portfolio visitors — v1.1
+- ✓ One-click demo with bundled Apple data — v1.1
+- ✓ Upload-your-own-data option with guided instructions — v1.1
+- ✓ Tech stack / skills showcase section visible in UI — v1.1
+- ✓ Downloadable Excel template with format documentation — v1.1
+- ✓ Streamlit Cloud deployment — v1.1
+- ✓ Polished dark navy UI with custom CSS and centered layout — v1.1
+- ✓ Keep-alive cron prevents Streamlit Cloud hibernation — v1.1
 
 ### Active
 
-(No active requirements — define next milestone with `/gsd:new-milestone`)
+(None — define with `/gsd:new-milestone`)
 
 ### Out of Scope
 
-- Multi-company comparison decks — single company focus keeps scope tight for v1
+- Multi-company comparison decks — single company focus keeps scope tight
 - Real-time data fetching (SEC EDGAR, Yahoo Finance) — static Excel input only; avoids auth complexity
 - Custom branding / white-labeling — one polished template is the goal
 - PDF export — PPTX is the standard consulting deliverable format
-- User authentication — not needed for a local/demo tool
+- User authentication — not needed for a portfolio demo tool
 - Mobile-responsive UI — not relevant for a desktop financial analysis tool
 - Native python-pptx charts — waterfall chart unavailable in native API; matplotlib-as-images approach works well
 
 ## Context
 
-Shipped v1.0 MVP with ~3,556 LOC Python.
+Shipped v1.0 MVP (2026-03-10) and v1.1 Portfolio Demo Polish (2026-03-11).
+~3,591 LOC Python, 96 tests passing.
 Tech stack: python-pptx, matplotlib, openpyxl, Pydantic v2, anthropic SDK, Streamlit.
 Demo data: Apple FY2020-FY2024 financials (5 years, 3 statements).
 Pipeline: parse_workbook → compute_metrics → generate_narrative → build_deck → bytes.
 Interfaces: CLI (`generate.py`) and Streamlit (`app.py`), both calling shared `run_pipeline()`.
+Live at: https://autopitch-54x3pzywhwscvrs9jw6yx7.streamlit.app/
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Three financial statements as input | Consultants analyze all three together; single-statement tools look like student projects | ✓ Good — covers full financial picture |
-| Claude for narrative | Generates insight-first language that matches consulting deck conventions | ✓ Good — single API call, consulting voice confirmed by human QA |
-| Streamlit for UI | Fastest path to an impressive browser demo without building a full web app | ✓ Good — thin wrapper, zero logic duplication |
-| Public company demo data (Apple) | Real financials recognizable to interviewers, validates the tool actually works | ✓ Good — FY2020-2024 data, 5 years |
-| matplotlib charts as images | Native python-pptx charts lack waterfall support; images give full visual control | ✓ Good — 150+ DPI, consistent Big 4 palette |
-| Pydantic v2 frozen models | Immutable data contracts, JSON serialization for API calls, type safety | ✓ Good — zero runtime mutations |
-| Optional NarrativeOutput param | Backwards-compatible API: callers opt-in without breaking existing code | ✓ Good — graceful fallback to placeholder defaults |
-| Shared run_pipeline() function | Single integration layer prevents logic duplication between CLI and Streamlit | ✓ Good — INTF-03 satisfied cleanly |
+| Three financial statements as input | Consultants analyze all three together | ✓ Good — covers full financial picture |
+| Claude for narrative | Generates insight-first consulting language | ✓ Good — single API call, consulting voice |
+| Streamlit for UI | Fastest path to impressive browser demo | ✓ Good — thin wrapper, zero logic duplication |
+| Public company demo data (Apple) | Real financials recognizable to interviewers | ✓ Good — FY2020-2024, 5 years |
+| matplotlib charts as images | Native python-pptx charts lack waterfall | ✓ Good — 150+ DPI, consistent palette |
+| Pydantic v2 frozen models | Immutable data contracts, type safety | ✓ Good — zero runtime mutations |
+| Shared run_pipeline() function | Single integration layer for CLI + Streamlit | ✓ Good — prevents divergence |
+| @st.cache_data on demo pipeline | Prevents duplicate Claude API calls | ✓ Good — v1.1 |
+| session_state for PPTX bytes | Download button survives Streamlit reruns | ✓ Good — v1.1 |
+| Custom CSS via unsafe_allow_html | config.toml too limited for dark navy design | ✓ Good — v1.1 |
+| GitHub Actions keep-alive cron | Prevents Streamlit Cloud 7-day hibernation | ✓ Good — v1.1 |
 
 ## Constraints
 
-- **Tech stack**: Python — standard in data/finance tooling, familiar to consulting tech teams
-- **LLM**: Claude API — requires `ANTHROPIC_API_KEY` env var; works on low-usage tier (~$0.01/deck)
+- **Tech stack**: Python — standard in data/finance tooling
+- **LLM**: Claude API — requires `ANTHROPIC_API_KEY`; ~$0.01/deck
 - **Output format**: `.pptx` via `python-pptx` library
 - **Excel input**: `openpyxl` for parsing; input format documented in TEMPLATE_FORMAT.md
-- **Charts**: `matplotlib` for chart generation, embedded into slides as PNG images
-- **Web UI**: Streamlit — minimal code, impressive demo layer, no backend infrastructure needed
+- **Charts**: `matplotlib` for chart generation, embedded as PNG images
+- **Web UI**: Streamlit — deployed on Streamlit Community Cloud
 - **No database**: stateless tool, no persistence required
 
 ---
-*Last updated: 2026-03-10 after v1.0 milestone*
+*Last updated: 2026-03-11 after v1.1 milestone*
