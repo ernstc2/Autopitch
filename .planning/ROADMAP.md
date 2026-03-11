@@ -57,12 +57,11 @@ Plans:
   3. After demo generation, elapsed time and slide count are displayed next to the download button
   4. A visitor can upload their own Excel file using clearly labeled instructions, an expandable format guide showing required sheets and columns, and a downloadable Excel template
   5. A tech stack section shows 5-6 technologies as badges with one-sentence architectural rationale per tool
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 06-01: Hero section, session state wiring, one-click demo with download
-- [ ] 06-02: Upload section — instructions, format guide accordion, template download
-- [ ] 06-03: Skills showcase and generation stats
+- [ ] 06-01: Hero section, session state wiring, one-click demo with download and generation stats
+- [ ] 06-02: Upload section with format guide, template download, and tech stack showcase
 
 ### Phase 7: Polish and Keep-Alive
 **Goal**: The deployed app looks polished and remains accessible to portfolio visitors around the clock without requiring manual intervention
@@ -86,6 +85,6 @@ Plans:
 | 2. Visual Output | v1.0 | 4/4 | Complete | 2026-03-10 |
 | 3. AI Narrative | v1.0 | 2/2 | Complete | 2026-03-10 |
 | 4. Interfaces and Polish | v1.0 | 3/3 | Complete | 2026-03-10 |
-| 5. Deployment Foundation | 1/2 | In Progress|  | - |
-| 6. Demo-First UI | v1.1 | 0/3 | Not started | - |
+| 5. Deployment Foundation | v1.1 | 2/2 | Complete | 2026-03-11 |
+| 6. Demo-First UI | v1.1 | 0/2 | Not started | - |
 | 7. Polish and Keep-Alive | v1.1 | 0/2 | Not started | - |
