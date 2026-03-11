@@ -1,0 +1,24 @@
+name: Keep-Alive
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  actions: write
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping Autopitch app
+        run: |
+          curl -s -o /dev/null -w "HTTP %{http_code}\n" \
+            https://autopitch-54x3pzywhwscvrs9jw6yx7.streamlit.app/
+
+      - name: Prevent 60-day cron auto-disable
+        uses: gautamkrishnar/keepalive-workflow@v2
+        with:
+          time_elapsed: 45
