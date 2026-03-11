@@ -222,24 +222,50 @@ class TestTemplatexlsxBytes:
         )
 
     def test_template_xlsx_bytes(self):
-        """_build_template_xlsx() returns bytes that start with PK (valid ZIP/XLSX)."""
-        # Import _build_template_xlsx from app module
-        # Need to mock streamlit to avoid widget rendering on import
+        """_build_template_xlsx() returns bytes that start with PK (valid ZIP/XLSX).
+
+        We execute _build_template_xlsx in isolation by extracting it from app.py
+        source and running it — avoids Streamlit widget execution at import time.
+        """
+        from io import BytesIO
+        import openpyxl
+
+        # Extract the function body from app.py source and exec it in a controlled
+        # namespace to avoid triggering Streamlit widget calls at module level.
+        source = _source()
+
+        # Build a minimal namespace with the imports the function needs
+        namespace: dict = {
+            "BytesIO": BytesIO,
+            "openpyxl": openpyxl,
+        }
+
+        # Exec the entire app source but with streamlit stubbed out so module-level
+        # widget calls are no-ops.  We need st.session_state to behave like a dict.
         import unittest.mock as mock
 
-        # Patch streamlit at module level before importing app
-        st_mock = mock.MagicMock()
-        st_mock.session_state = {}
-
-        # Use a simple dict-like object for session_state
         class FakeSessionState(dict):
-            def __contains__(self, key):
-                return dict.__contains__(self, key)
+            pass
 
+        st_mock = mock.MagicMock()
         st_mock.session_state = FakeSessionState()
+        # Make st.columns() return a 2-element list of MagicMocks so unpacking works
+        col_mock = mock.MagicMock()
+        col_mock.__enter__ = mock.Mock(return_value=mock.MagicMock())
+        col_mock.__exit__ = mock.Mock(return_value=False)
+        st_mock.columns.return_value = [col_mock, col_mock]
+        # Make context managers work (st.spinner, st.expander)
+        ctx = mock.MagicMock()
+        ctx.__enter__ = mock.Mock(return_value=mock.MagicMock())
+        ctx.__exit__ = mock.Mock(return_value=False)
+        st_mock.spinner.return_value = ctx
+        st_mock.expander.return_value = ctx
+        # Buttons must return False to prevent pipeline execution
+        st_mock.button.return_value = False
+        # file_uploader must return None to skip upload block
+        st_mock.file_uploader.return_value = None
 
         with mock.patch.dict(sys.modules, {"streamlit": st_mock}):
-            # Clear any cached app module
             if "app" in sys.modules:
                 del sys.modules["app"]
 
