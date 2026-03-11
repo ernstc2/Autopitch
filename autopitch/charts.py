@@ -166,6 +166,24 @@ def waterfall_chart(labels: list, values: list, title: str, is_total: list | Non
 
     fig, ax = plt.subplots(figsize=FIGSIZE_STANDARD)
     ax.bar(labels, heights, bottom=bottoms, color=colors, width=0.5, zorder=3)
+
+    # Draw connector lines between adjacent bars
+    running = 0.0
+    x_positions = np.arange(n)
+    for i in range(n):
+        if is_total[i]:
+            running = float(values[i])
+        else:
+            running += float(values[i])
+        if i < n - 1:
+            ax.plot(
+                [x_positions[i] + 0.25, x_positions[i + 1] - 0.25],
+                [running, running],
+                color=LIGHT_GRAY_HEX,
+                linewidth=1.0,
+                zorder=4,
+            )
+
     ax.set_title(title, fontfamily=FONT_HEADING, fontsize=14, color=DARK_GRAY_HEX, pad=10)
     ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda x, _: f"${x / 1000:.0f}B"))
     _apply_consulting_style(ax, fig)
