@@ -3,6 +3,21 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Portfolio Demo Polish
 status: planning
+stopped_at: Completed 06-01-PLAN.md
+last_updated: "2026-03-11T01:29:37.637Z"
+last_activity: 2026-03-11 — Deployed to Streamlit Cloud; end-to-end generation verified at public URL
+progress:
+  total_phases: 3
+  completed_phases: 1
+  total_plans: 4
+  completed_plans: 3
+---
+
+---
+gsd_state_version: 1.0
+milestone: v1.1
+milestone_name: Portfolio Demo Polish
+status: planning
 stopped_at: Completed 05-02-PLAN.md
 last_updated: "2026-03-11T01:00:00.000Z"
 last_activity: 2026-03-11 — Deployed to Streamlit Cloud; end-to-end generation verified at public URL
@@ -47,6 +62,7 @@ Progress: [██████████] 100% (Phase 05 complete)
 
 *Updated after each plan completion*
 | Phase 05-deployment-foundation P01 | 4min | 2 tasks | 6 files |
+| Phase 06-demo-first-ui P01 | 7min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -62,6 +78,9 @@ Recent v1.1 decisions:
 - [Phase 05-deployment-foundation P01]: Split runtime and dev deps: requirements.txt runtime-only (7 deps); requirements-dev.txt adds pytest/pytest-cov via -r include
 - [Phase 05-deployment-foundation P01]: Root-level TOML key ANTHROPIC_API_KEY auto-promoted to os.environ on Streamlit Cloud — no code changes needed in narrative.py
 - [Phase 05-deployment-foundation P02]: Canonical public URL: https://autopitch-54x3pzywhwscvrs9jw6yx7.streamlit.app/ — Python 3.11, ANTHROPIC_API_KEY secret configured, end-to-end verified
+- [Phase 06-demo-first-ui]: on_click='ignore' on all download buttons — prevents rerun that hides download button after clicking
+- [Phase 06-demo-first-ui]: Download buttons rendered outside if-button blocks based on session_state — persists across all reruns
+- [Phase 06-demo-first-ui]: Slide count hardcoded as 11 in session state — avoids PPTX re-parse; deck always produces exactly 11 slides
 
 ### Pending Todos
 
@@ -73,6 +92,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-11T01:00:00.000Z
-Stopped at: Completed 05-02-PLAN.md
+Last session: 2026-03-11T01:29:37.634Z
+Stopped at: Completed 06-01-PLAN.md
 Resume file: None

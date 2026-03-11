@@ -86,5 +86,5 @@ Plans:
 | 3. AI Narrative | v1.0 | 2/2 | Complete | 2026-03-10 |
 | 4. Interfaces and Polish | v1.0 | 3/3 | Complete | 2026-03-10 |
 | 5. Deployment Foundation | v1.1 | 2/2 | Complete | 2026-03-11 |
-| 6. Demo-First UI | v1.1 | 0/2 | Not started | - |
+| 6. Demo-First UI | 1/2 | In Progress|  | - |
 | 7. Polish and Keep-Alive | v1.1 | 0/2 | Not started | - |
