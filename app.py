@@ -162,7 +162,7 @@ st.divider()
 # UPLOAD SECTION (UPLD-01, UPLD-02, UPLD-03)
 # ---------------------------------------------------------------------------
 
-st.subheader("Upload Your Own Data")
+st.header("Upload Your Own Data")
 st.markdown(
     "Upload an Excel workbook with your company's financials to generate a "
     "custom deck. The file must contain three sheets: **P&L**, **Balance Sheet**, "
@@ -247,6 +247,7 @@ STACK = [
 ]
 
 st.subheader("How It's Built")
+st.caption("Built with these tools and libraries.")
 for name, rationale in STACK:
     col1, col2 = st.columns([1, 4])
     with col1:
