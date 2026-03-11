@@ -28,7 +28,7 @@ See: `.planning/milestones/v1.0-ROADMAP.md` for full phase details.
 **Milestone Goal:** Transform the Streamlit UI into a portfolio-ready live demo that showcases capabilities, technical skills, and guides visitors through the experience. Accessible via a public Streamlit Cloud URL.
 
 - [ ] **Phase 5: Deployment Foundation** - Fix confirmed deployment blockers and get the app live on Streamlit Cloud
-- [ ] **Phase 6: Demo-First UI** - Build the complete four-section portfolio UI in app.py
+- [x] **Phase 6: Demo-First UI** - Build the complete four-section portfolio UI in app.py (completed 2026-03-11)
 - [ ] **Phase 7: Polish and Keep-Alive** - Visual theme, generation stats, and hibernation prevention
 
 ## Phase Details
@@ -86,5 +86,5 @@ Plans:
 | 3. AI Narrative | v1.0 | 2/2 | Complete | 2026-03-10 |
 | 4. Interfaces and Polish | v1.0 | 3/3 | Complete | 2026-03-10 |
 | 5. Deployment Foundation | v1.1 | 2/2 | Complete | 2026-03-11 |
-| 6. Demo-First UI | 1/2 | In Progress|  | - |
+| 6. Demo-First UI | 2/2 | Complete   | 2026-03-11 | - |
 | 7. Polish and Keep-Alive | v1.1 | 0/2 | Not started | - |
