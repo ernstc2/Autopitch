@@ -5,3 +5,6 @@ __pycache__/
 .pytest_cache/
 output/*.pptx
 .env
+
+# Streamlit secrets
+.streamlit/secrets.toml
