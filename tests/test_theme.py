@@ -31,11 +31,11 @@ def test_has_theme_section():
     assert "theme" in data, "config.toml missing [theme] section"
 
 
-def test_primary_color_is_accent_blue():
-    """VISL-01: primaryColor must be #4a9eff (bright blue accent for dark theme)."""
+def test_primary_color_is_teal():
+    """VISL-01: primaryColor must be #00838A (teal accent matching PPTX palette)."""
     theme = _load_theme()
-    assert theme.get("primaryColor") == "#4a9eff", (
-        f"primaryColor is {theme.get('primaryColor')!r}, expected '#4a9eff'"
+    assert theme.get("primaryColor") == "#00838A", (
+        f"primaryColor is {theme.get('primaryColor')!r}, expected '#00838A'"
     )
 
 
